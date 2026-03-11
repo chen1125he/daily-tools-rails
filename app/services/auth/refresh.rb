@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Auth
   class Refresh
     Result = Struct.new(:success?, :payload, :error_code, :error_message, keyword_init: true)
