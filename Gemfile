@@ -22,7 +22,7 @@ gem "tzinfo-data", platforms: %i[ windows jruby ]
 gem "redis"
 gem "sidekiq"
 # Rails 8.0.4 redis_cache_store currently expects connection_pool 2.x API.
-gem "connection_pool", "< 3.0"
+gem "connection_pool", "< 4.0"
 
 # Reduces boot times through caching; required in config/boot.rb
 gem "bootsnap", require: false
