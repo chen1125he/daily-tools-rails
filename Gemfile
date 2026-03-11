@@ -3,7 +3,7 @@
 source 'https://rubygems.org'
 
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
-gem 'rails', '~> 8.0.2', '>= 8.0.2.1'
+gem 'rails', '~> 8.1.2'
 # Use postgresql as the database for Active Record
 gem 'pg', '~> 1.1'
 # Use the Puma web server [https://github.com/puma/puma]
@@ -22,7 +22,7 @@ gem 'tzinfo-data', platforms: %i[ windows jruby ]
 gem 'redis'
 gem 'sidekiq'
 # Rails 8.0.4 redis_cache_store currently expects connection_pool 2.x API.
-gem 'connection_pool', '< 3.0'
+gem "connection_pool", "< 4.0"
 
 # Reduces boot times through caching; required in config/boot.rb
 gem 'bootsnap', require: false
