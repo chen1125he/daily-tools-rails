@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require "securerandom"
+require 'securerandom'
 
 module Auth
   class TokenIssuer
@@ -25,13 +25,13 @@ module Auth
       def issue_access_token(user)
         payload = {
           sub: user.id,
-          scope: "access",
+          scope: 'access',
           jti: SecureRandom.uuid,
           iat: Time.current.to_i,
           exp: ACCESS_TOKEN_TTL.from_now.to_i
         }
 
-        JWT.encode(payload, jwt_secret, "HS256")
+        JWT.encode(payload, jwt_secret, 'HS256')
       end
 
       def issue_refresh_token(user:, ip:, device_info:)

@@ -9,9 +9,9 @@ class User < ApplicationRecord
   validates :password, length: { minimum: 8 }, if: -> { password.present? }
   validates :status, inclusion: { in: %w[active disabled] }
 
-  scope :active, -> { where(status: "active") }
+  scope :active, -> { where(status: 'active') }
 
   def active?
-    status == "active"
+    status == 'active'
   end
 end
