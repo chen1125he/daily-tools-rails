@@ -78,6 +78,7 @@ GEM
       sshkit (>= 1.6.1, != 1.7.0)
     ast (2.4.3)
     base64 (0.3.0)
+    bcrypt (3.1.21)
     benchmark (0.5.0)
     bigdecimal (4.0.1)
     bootsnap (1.23.0)
@@ -130,6 +131,8 @@ GEM
     json-schema (6.2.0)
       addressable (~> 2.8)
       bigdecimal (>= 3.1, < 5)
+    jwt (3.1.2)
+      base64
     language_server-protocol (3.17.0.5)
     lint_roller (1.1.0)
     logger (1.7.0)
@@ -334,6 +337,7 @@ PLATFORMS
   x86_64-linux-musl
 
 DEPENDENCIES
+  bcrypt (~> 3.1.7)
   bootsnap
   brakeman
   capistrano
@@ -344,6 +348,7 @@ DEPENDENCIES
   capistrano3-puma
   connection_pool (< 3.0)
   debug
+  jwt
   pg (~> 1.1)
   puma (>= 5.0)
   rails (~> 8.0.2, >= 8.0.2.1)
