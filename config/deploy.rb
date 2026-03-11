@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 lock "~> 3.20.0"
 
 set :application, "daily_tools_rails"
@@ -20,4 +22,4 @@ set :puma_bind, "unix://#{shared_path}/tmp/sockets/puma.sock"
 # Sidekiq
 set :sidekiq_roles, :app
 set :sidekiq_processes, 1
-set :sidekiq_config_files, ["sidekiq.yml"]
+set :sidekiq_config_files, [ "sidekiq.yml" ]
