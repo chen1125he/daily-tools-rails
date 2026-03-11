@@ -49,7 +49,7 @@ module Api
 
       def password
         unless current_user.authenticate(password_params[:current_password])
-          return render_auth_error("AUTH_INVALID_CREDENTIALS", "当前密码错误", status: :unprocessable_entity)
+          return render_auth_error("AUTH_INVALID_CREDENTIALS", "当前密码错误", status: :unprocessable_content)
         end
 
         unless current_user.update(password_params.slice(:password, :password_confirmation))
@@ -89,7 +89,7 @@ module Api
             code: "AUTH_PASSWORD_WEAK",
             message: record.errors.full_messages.to_sentence
           }
-        }, status: :unprocessable_entity
+        }, status: :unprocessable_content
       end
     end
   end
