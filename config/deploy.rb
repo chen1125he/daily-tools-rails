@@ -3,8 +3,14 @@
 lock '~> 3.20.0'
 
 set :application, 'daily_tools_rails'
-set :repo_url, 'git@github.com:YOUR_GITHUB_USERNAME/daily-tools-rails.git'
+set :repo_url, ENV.fetch('CAP_REPO_URL', 'git@github.com:chen1125he/daily-tools-rails.git')
 set :deploy_to, "/var/www/#{fetch(:application)}"
+set :branch, ENV.fetch('CAP_BRANCH', 'main')
+
+# Deploy output settings.
+set :format, :airbrussh
+set :log_level, ENV.fetch('CAP_LOG_LEVEL', 'info').to_sym
+set :pty, false
 
 set :rbenv_type, :user
 set :rbenv_ruby, '3.3.9'
