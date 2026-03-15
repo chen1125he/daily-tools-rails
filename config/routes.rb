@@ -18,6 +18,8 @@ Rails.application.routes.draw do
       get 'auth/me', to: 'auth#me'
       delete 'auth/sign_out', to: 'auth#sign_out'
       patch 'auth/password', to: 'auth#password'
+      resources :chores, only: %i[index show create update]
+      resources :chore_records, only: %i[index show create update destroy]
     end
   end
 end
