@@ -19,7 +19,9 @@ Rails.application.routes.draw do
       delete 'auth/sign_out', to: 'auth#sign_out'
       patch 'auth/password', to: 'auth#password'
       resources :chores, only: %i[index show create update]
-      resources :chore_records, only: %i[index show create update destroy]
+      resources :chore_records, only: %i[index show create update destroy] do
+        post 'parse_from_text', on: :collection
+      end
     end
   end
 end

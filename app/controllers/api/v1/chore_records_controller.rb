@@ -29,6 +29,24 @@ module Api
         render json: { data: record_payload(@chore_record) }, status: :ok
       end
 
+      def parse_from_text
+        parse_payload = Ai::ChoreRecordParser.call(text: create_params[:text], current_user: current_user)
+
+        @chore_record = ChoreRecord.create!(
+          chore_id: parse_payload[:chore_id],
+          contribution_points: parse_payload[:contribution_points],
+          performed_by_id: parse_payload[:performed_by_id],
+          performed_at: parse_payload[:performed_at],
+          source_text: parse_payload.dig(:ai_parse_payload, :text),
+          created_by_id: current_user.id,
+          ai_parse_payload: parse_payload[:ai_parse_payload]
+        )
+
+        render :show, status: :created
+      rescue ActiveRecord::RecordInvalid => e
+        render_validation_error(e.record)
+      end
+
       def create
         created_by_id = create_params[:created_by_id] || current_user.id
         result = ChoreRecords::CreateFromText.call(

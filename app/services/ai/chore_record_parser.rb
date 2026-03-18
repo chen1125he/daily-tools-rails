@@ -6,55 +6,138 @@ module Ai
 
     class << self
       def call(text:, current_user:)
-        normalized_text = text.to_s.strip
-        raise ParseError, 'text 不能为空' if normalized_text.blank?
+        @current_user = current_user
+        @normalized_text = text.to_s.strip
+        raise ParseError, 'text 不能为空' if @normalized_text.blank?
+
+        @model = Setting.ai_chore_record_parser_model
+
+        @default_chore_catalog = default_chore_catalog
+        raise ParseError, '没有可用的家务类型，请先创建 chore' if @default_chore_catalog.empty?
+
+        @resolved_user_list = User.all.map do |user|
+          {
+            id: user.id,
+            name: current_user.id == user.id ? "#{user.name} (我自己)" : user.name.to_s,
+          }
+        end
+
+        ai_result = parse_with_ai
+
+        mapped_chore = @default_chore_catalog.find { |item| item[:id] == ai_result[:chore_id] }
+        raise ParseError, "AI 返回了不存在的 chore_id: #{ai_result[:chore_id]}" unless mapped_chore
 
         {
-          chore_name: extract_chore_name(normalized_text),
-          performed_by_name: extract_performed_by_name(normalized_text, current_user),
-          contribution_points: extract_contribution_points(normalized_text),
-          performed_at: extract_performed_at(normalized_text),
-          confidence: 0.6,
-          raw: { strategy: 'rule_based', text: normalized_text }
+          chore_id: mapped_chore[:id],
+          chore_name: mapped_chore[:name],
+          performed_by_name: @resolved_user_list.find { |item| item[:id] == ai_result[:performed_by_id] }[:name],
+          performed_by_id: ai_result[:performed_by_id] || @current_user.id,
+          contribution_points: ai_result[:contribution_points] || mapped_chore[:default_contribution_points],
+          performed_at: ai_result[:performed_at] || Time.current,
+          ai_parse_payload: {
+            model: @model,
+            text: @normalized_text,
+            ai_parse_payload: ai_result[:ai_parse_payload]
+          }
         }
       end
 
       private
 
-      def extract_chore_name(text)
-        direct_match = text.match(/(做饭|洗碗|拖地|扫地|收拾|整理|洗衣服|倒垃圾)/)
-        return direct_match[1] if direct_match
-
-        verb_object_match = text.match(/(?:我|他|她|我们|一起)?(?:在)?(做|洗|拖|扫|整理|收拾)([^\s，。,.]{1,10})/)
-        return "#{verb_object_match[1]}#{verb_object_match[2]}" if verb_object_match
-
-        duration_match = text.match(/([^\s，。,.]{1,12})\s*\d+(?:\.\d+)?\s*(?:小时|h|点)/)
-        return duration_match[1] if duration_match
-
-        raise ParseError, '无法识别家务名称'
+      def default_chore_catalog
+        Chore.active.map do |chore|
+          {
+            id: chore.id,
+            name: chore.name.to_s,
+            description: chore.description.to_s,
+            default_contribution_points: chore.default_contribution_points&.to_f
+          }
+        end
       end
 
-      def extract_performed_by_name(text, current_user)
-        return current_user.name if text.include?('我')
+      def normalize_catalog(catalog)
+        Array(catalog).filter_map do |item|
+          id = item[:id] || item['id']
+          name = item[:name] || item['name']
+          next if id.blank? || name.blank?
 
-        match = text.match(/(?:由|给|帮)?([^\s，。,.]{1,20})(?:做的|完成|干的)/)
-        return match[1] if match&.[](1).present?
-
-        current_user.name
+          {
+            id: id.to_i,
+            name: name.to_s,
+            description: (item[:description] || item['description']).to_s,
+            default_contribution_points: to_optional_float(item[:default_contribution_points] || item['default_contribution_points'])
+          }
+        end
       end
 
-      def extract_contribution_points(text)
-        match = text.match(/(\d+(?:\.\d+)?)\s*(?:小时|h|点)/)
-        return match[1].to_d if match
+      def to_optional_float(value)
+        return nil if value.blank?
 
-        1.0.to_d
+        Float(value)
+      rescue ArgumentError, TypeError
+        nil
       end
 
-      def extract_performed_at(text)
-        return Time.current if text.include?('今天')
-        return 1.day.ago if text.include?('昨天') || text.include?('昨晚')
+      def parse_with_ai
+        prompt = build_prompt
+        response = AliyunAi.chat(prompt: prompt, model: @model)
 
-        Time.current
+        content = response.dig('choices', 0, 'message', 'content').to_s
+        raise ParseError, "AI 响应为空: #{response}" if content.blank?
+
+        parsed = parse_json_content(content)
+        chore_id = Integer(parsed.fetch('chore_id'))
+        points = BigDecimal(parsed.fetch('contribution_points').to_s)
+        performed_by_id = Integer(parsed.fetch('performed_by_id'))
+        performed_at = Date.parse(parsed.fetch('performed_at'))
+
+        {
+          chore_id: chore_id,
+          contribution_points: points,
+          performed_by_id: performed_by_id,
+          performed_at: performed_at,
+          ai_parse_payload: response.merge(prompt: prompt)
+        }
+      rescue KeyError, ArgumentError, TypeError => e
+        raise ParseError, "AI 输出格式不正确: #{e.message}，原文: #{content}"
+      end
+
+      def build_prompt
+        <<~PROMPT
+          你是家务记录解析助手。请从用户输入中识别以下数据
+          1. 对应的家务类型和贡献分数。
+          2. 家务完成的日期。
+          3. 家务完成的参与者。
+          你必须只输出 JSON，不能输出任何额外文本。
+
+          用户输入:
+          #{@normalized_text}
+
+          角色信息(JSON):
+          #{@resolved_user_list.to_json}
+
+          家务候选列表(JSON):
+          #{@default_chore_catalog.to_json}
+
+          今天是 #{Date.today.strftime('%Y-%m-%d')}。
+
+          输出要求:
+          1) 输出 JSON 对象，字段严格为:
+             - chore_id: Integer，必须来自候选列表中的 id
+             - contribution_points: Number，必须大于 0, 如果输入里没有明确分数，返回空值(nil)。
+             - performed_by_id: Integer，必须来自角色信息中的 id, 如果输入里没有明确参与者，返回空值(nil)。
+             - performed_at: Date，推算出家务完成的日期, 如果输入里没有明确日期，返回空值(nil)。
+          2) 不允许新增字段，不允许解释。
+        PROMPT
+      end
+
+      def parse_json_content(content)
+        JSON.parse(content)
+      rescue JSON::ParserError
+        json_fragment = content[/\{.*\}/m]
+        raise ParseError, "无法从 AI 响应中提取 JSON: #{content}" if json_fragment.blank?
+
+        JSON.parse(json_fragment)
       end
     end
   end

@@ -34,6 +34,9 @@ gem 'dotenv-rails'
 gem 'faraday'
 gem 'rswag-api'
 gem 'rswag-ui'
+gem 'rabl'
+
+gem 'rails-settings-cached'
 
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
 # gem "image_processing", "~> 1.2"
