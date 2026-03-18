@@ -16,7 +16,7 @@ set :rbenv_type, :user
 set :rbenv_ruby, '3.3.9'
 set :service_unit_env_files, ['/etc/systemd/system/daily_tools_rails.env']
 
-append :linked_files, 'config/master.key'
+append :linked_files, 'config/master.key', 'config/credentials/production.key'
 append :linked_dirs, 'log', 'tmp/pids', 'tmp/cache', 'tmp/sockets', 'storage', '.bundle'
 
 # Bundler 2+ no longer accepts --deployment as a CLI flag.
