@@ -32,6 +32,7 @@ gem 'thruster', require: false
 
 gem 'dotenv-rails'
 gem 'faraday'
+gem 'rest-client'
 gem 'rswag-api'
 gem 'rswag-ui'
 
