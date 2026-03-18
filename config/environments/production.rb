@@ -47,7 +47,7 @@ Rails.application.configure do
 
   # Use Redis for a shared, durable cache store.
   config.cache_store = :redis_cache_store, {
-    url: ENV.fetch('REDIS_URL'),
+    url: ENV.fetch('REDIS_URL', 'redis://127.0.0.1:6379/0'),
     namespace: "#{Rails.application.class.module_parent_name.underscore}:cache"
   }
 

@@ -31,6 +31,7 @@ gem 'bootsnap', require: false
 gem 'thruster', require: false
 
 gem 'dotenv-rails'
+gem 'faraday'
 gem 'rswag-api'
 gem 'rswag-ui'
 
