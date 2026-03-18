@@ -22,7 +22,9 @@ module AliyunAi
         req.body = payload.to_json
       end
 
-      response.body
+      JSON.parse(response.body)
+    rescue JSON::ParserError
+      raise "Failed to parse response: #{response.body}"
     end
   end
 end
