@@ -15,14 +15,14 @@ RSpec.describe 'Chore Records API', type: :request do
         required: ['text'],
         properties: {
           text: { type: :string },
-          created_by_id: { type: :integer }
+          creator_id: { type: :integer }
         }
       }
 
       response '201', 'created' do
         let!(:user) { create(:user, name: '小红') }
         let(:Authorization) { "Bearer #{Auth::TokenIssuer.issue_pair(user: user)[:access_token]}" }
-        let(:payload) { { text: '昨晚我做饭 1.5 小时', created_by_id: user.id } }
+        let(:payload) { { text: '昨晚我做饭 1.5 小时', creator_id: user.id } }
 
         run_test! do |response|
           data = response.parsed_body['data']
@@ -49,7 +49,7 @@ RSpec.describe 'Chore Records API', type: :request do
       produces 'application/json'
       security [{ bearerAuth: [] }]
       parameter name: :Authorization, in: :header, schema: { type: :string }
-      parameter name: :performed_by_id, in: :query, schema: { type: :integer }
+      parameter name: :performer_id, in: :query, schema: { type: :integer }
       parameter name: :chore_name, in: :query, schema: { type: :string }
 
       response '200', 'ok' do
@@ -58,13 +58,13 @@ RSpec.describe 'Chore Records API', type: :request do
         let!(:cook_chore) { create(:chore, name: '做饭') }
         let!(:clean_chore) { create(:chore, name: '拖地') }
         let!(:matched) do
-          create(:chore_record, chore: cook_chore, performed_by: performed_user, created_by: user, performed_at: Time.zone.parse('2026-03-08 20:00:00'))
+          create(:chore_record, chore: cook_chore, performer: performed_user, creator: user, performed_at: Time.zone.parse('2026-03-08 20:00:00'))
         end
         let!(:unmatched) do
-          create(:chore_record, chore: clean_chore, performed_by: user, created_by: user, performed_at: Time.zone.parse('2026-03-08 21:00:00'))
+          create(:chore_record, chore: clean_chore, performer: user, creator: user, performed_at: Time.zone.parse('2026-03-08 21:00:00'))
         end
         let(:Authorization) { "Bearer #{Auth::TokenIssuer.issue_pair(user: user)[:access_token]}" }
-        let(:performed_by_id) { performed_user.id }
+        let(:performer_id) { performed_user.id }
         let(:chore_name) { '做' }
 
         run_test! do |response|
@@ -86,7 +86,7 @@ RSpec.describe 'Chore Records API', type: :request do
 
       response '200', 'ok' do
         let!(:user) { create(:user, name: '创建者') }
-        let!(:chore_record) { create(:chore_record, created_by: user, performed_by: user) }
+        let!(:chore_record) { create(:chore_record, creator: user, performer: user) }
         let(:Authorization) { "Bearer #{Auth::TokenIssuer.issue_pair(user: user)[:access_token]}" }
         let(:id) { chore_record.id }
 
@@ -112,7 +112,7 @@ RSpec.describe 'Chore Records API', type: :request do
 
       response '200', 'updated' do
         let!(:user) { create(:user, name: '创建者') }
-        let!(:chore_record) { create(:chore_record, created_by: user, performed_by: user, contribution_points: 1.0) }
+        let!(:chore_record) { create(:chore_record, creator: user, performer: user, contribution_points: 1.0) }
         let(:Authorization) { "Bearer #{Auth::TokenIssuer.issue_pair(user: user)[:access_token]}" }
         let(:id) { chore_record.id }
         let(:payload) { { contribution_points: 2.5 } }
@@ -131,7 +131,7 @@ RSpec.describe 'Chore Records API', type: :request do
 
       response '204', 'deleted' do
         let!(:user) { create(:user, name: '创建者') }
-        let!(:chore_record) { create(:chore_record, created_by: user, performed_by: user) }
+        let!(:chore_record) { create(:chore_record, creator: user, performer: user) }
         let(:Authorization) { "Bearer #{Auth::TokenIssuer.issue_pair(user: user)[:access_token]}" }
         let(:id) { chore_record.id }
 

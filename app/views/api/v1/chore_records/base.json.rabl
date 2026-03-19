@@ -1,13 +1,15 @@
-attributes :id, :chore_id, :performed_by_id, :created_by_id, :source_text
+attributes :id, :chore_type, :chore_id, :custom_chore_name, :performer_id, :creator_id, :source_text
+
+node(:chore_name) { |record| record.display_chore_name }
 
 child(:chore) do
   extends 'api/v1/chores/base'
 end
 
-child(:performed_by) do
+child(performer: :performer) do
   extends 'api/v1/users/base'
 end
 
-child(:created_by) do
+child(creator: :creator) do
   extends 'api/v1/users/base'
 end

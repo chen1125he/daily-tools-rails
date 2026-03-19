@@ -2,8 +2,8 @@
 
 FactoryBot.define do
   factory :chore_record do
-    association :performed_by, factory: :user
-    association :created_by, factory: :user
+    association :performer, factory: :user
+    association :creator, factory: :user
     association :chore
     contribution_points { 1.5 }
     performed_at { Time.current }

@@ -13,7 +13,6 @@ module Ai
         @model = Setting.ai_chore_record_parser_model
 
         @default_chore_catalog = default_chore_catalog
-        raise ParseError, '没有可用的家务类型，请先创建 chore' if @default_chore_catalog.empty?
 
         @resolved_user_list = User.all.map do |user|
           {
@@ -24,21 +23,22 @@ module Ai
 
         ai_result = parse_with_ai
 
-        mapped_chore = @default_chore_catalog.find { |item| item[:id] == ai_result[:chore_id] }
-        raise ParseError, "AI 返回了不存在的 chore_id: #{ai_result[:chore_id]}" unless mapped_chore
+        mapped_chore = nil
+        if ai_result[:chore_type] == 'catalog'
+          mapped_chore = @default_chore_catalog.find { |item| item[:id] == ai_result[:chore_id] }
+          raise ParseError, "AI 返回了不存在的 chore_id: #{ai_result[:chore_id]}" unless mapped_chore
+        end
 
         {
-          chore_id: mapped_chore[:id],
-          chore_name: mapped_chore[:name],
-          performed_by_name: @resolved_user_list.find { |item| item[:id] == ai_result[:performed_by_id] }[:name],
-          performed_by_id: ai_result[:performed_by_id] || @current_user.id,
-          contribution_points: ai_result[:contribution_points] || mapped_chore[:default_contribution_points],
+          chore_type: ai_result[:chore_type],
+          chore_id: mapped_chore&.dig(:id),
+          custom_chore_name: ai_result[:custom_chore_name],
+          chore_name: mapped_chore&.dig(:name) || ai_result[:custom_chore_name],
+          performer_name: @resolved_user_list.find { |item| item[:id] == ai_result[:performer_id] }[:name],
+          performer_id: ai_result[:performer_id] || @current_user.id,
+          contribution_points: ai_result[:contribution_points] || mapped_chore&.dig(:default_contribution_points) || 1.0,
           performed_at: ai_result[:performed_at] || Time.current,
-          ai_parse_payload: {
-            model: @model,
-            text: @normalized_text,
-            ai_parse_payload: ai_result[:ai_parse_payload]
-          }
+          ai_parse_payload: ai_result
         }
       end
 
@@ -86,20 +86,34 @@ module Ai
         raise ParseError, "AI 响应为空: #{response}" if content.blank?
 
         parsed = parse_json_content(content)
-        chore_id = Integer(parsed.fetch('chore_id'))
-        points = BigDecimal(parsed.fetch('contribution_points').to_s)
-        performed_by_id = Integer(parsed.fetch('performed_by_id'))
-        performed_at = Date.parse(parsed.fetch('performed_at'))
+        chore_type = parsed['chore_type'].presence || (parsed['chore_id'].present? ? 'catalog' : 'custom')
+        raise ParseError, "不支持的 chore_type: #{chore_type}" unless ChoreRecord.chore_types.key?(chore_type)
+
+        chore_id = chore_type == 'catalog' ? Integer(parsed.fetch('chore_id')) : nil
+        custom_chore_name = chore_type == 'custom' ? parsed['custom_chore_name'].to_s.strip : nil
+        raise ParseError, 'custom_chore_name 不能为空' if chore_type == 'custom' && custom_chore_name.blank?
+
+        points = to_optional_decimal(parsed['contribution_points'])
+        performer_id = parsed['performer_id'].present? ? Integer(parsed['performer_id']) : @current_user.id
+        performed_at = parsed['performed_at'].present? ? Date.parse(parsed['performed_at']) : nil
 
         {
+          chore_type: chore_type,
           chore_id: chore_id,
+          custom_chore_name: custom_chore_name,
           contribution_points: points,
-          performed_by_id: performed_by_id,
+          performer_id: performer_id,
           performed_at: performed_at,
           ai_parse_payload: response.merge(prompt: prompt)
         }
       rescue KeyError, ArgumentError, TypeError => e
         raise ParseError, "AI 输出格式不正确: #{e.message}，原文: #{content}"
+      end
+
+      def to_optional_decimal(value)
+        return nil if value.blank?
+
+        BigDecimal(value.to_s)
       end
 
       def build_prompt
@@ -123,10 +137,12 @@ module Ai
 
           输出要求:
           1) 输出 JSON 对象，字段严格为:
-             - chore_id: Integer，必须来自候选列表中的 id
+             - chore_type: String，只能是 "catalog" 或 "custom" 自定义家务类型为 "custom"，默认类型为 "catalog"。
+             - custom_chore_name: String，仅在 chore_type="custom" 时返回，必须返回自定义家务名称。
+             - chore_id: Integer，仅在 chore_type="catalog" 时返回，必须来自候选列表中的 id
              - contribution_points: Number，必须大于 0, 如果输入里没有明确分数，返回空值(nil)。
-             - performed_by_id: Integer，必须来自角色信息中的 id, 如果输入里没有明确参与者，返回空值(nil)。
-             - performed_at: Date，推算出家务完成的日期, 如果输入里没有明确日期，返回空值(nil)。
+             - performer_id: Integer，必须来自角色信息中的 id, 如果输入里没有明确参与者，返回空值(nil)。
+             - performed_at: Date，推算出家务完成的日期, 如果用户输入里没有明确日期，返回空值(nil)。
           2) 不允许新增字段，不允许解释。
         PROMPT
       end

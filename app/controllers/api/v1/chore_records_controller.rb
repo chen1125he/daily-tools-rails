@@ -6,7 +6,7 @@ module Api
       before_action :set_chore_record, only: %i[show update destroy]
 
       def index
-        records = ChoreRecord.includes(:chore, :performed_by, :created_by)
+        records = ChoreRecord.includes(:chore, :performer, :creator)
         records = apply_filters(records)
         records = records.order(performed_at: :desc, id: :desc)
 
@@ -30,15 +30,18 @@ module Api
       end
 
       def parse_from_text
-        parse_payload = Ai::ChoreRecordParser.call(text: create_params[:text], current_user: current_user)
+        params.permit!(:text)
+        parse_payload = Ai::ChoreRecordParser.call(text: params[:text], current_user: current_user)
 
         @chore_record = ChoreRecord.create!(
+          chore_type: parse_payload[:chore_type],
           chore_id: parse_payload[:chore_id],
+          custom_chore_name: parse_payload[:custom_chore_name],
           contribution_points: parse_payload[:contribution_points],
-          performed_by_id: parse_payload[:performed_by_id],
+          performer_id: parse_payload[:performer_id],
           performed_at: parse_payload[:performed_at],
-          source_text: parse_payload.dig(:ai_parse_payload, :text),
-          created_by_id: current_user.id,
+          source_text: params[:text],
+          creator_id: current_user.id,
           ai_parse_payload: parse_payload[:ai_parse_payload]
         )
 
@@ -48,15 +51,8 @@ module Api
       end
 
       def create
-        created_by_id = create_params[:created_by_id] || current_user.id
-        result = ChoreRecords::CreateFromText.call(
-          text: create_params[:text],
-          created_by_id: created_by_id,
-          current_user: current_user
-        )
-        return render_create_error(result) unless result.success?
-
-        render json: { data: record_payload(result.record), meta: result.meta }, status: :created
+        # TODO: 实现手动创建家务记录
+        render json: { data: record_payload(@chore_record) }, status: :created
       end
 
       def update
@@ -73,22 +69,24 @@ module Api
       private
 
       def set_chore_record
-        @chore_record = ChoreRecord.includes(:chore, :performed_by, :created_by).find(params[:id])
+        @chore_record = ChoreRecord.includes(:chore, :performer, :creator).find(params[:id])
       rescue ActiveRecord::RecordNotFound
         render_not_found('CHORE_RECORD_NOT_FOUND', '家务记录不存在')
       end
 
       def apply_filters(records)
         scoped = records
-        scoped = scoped.where(performed_by_id: params[:performed_by_id]) if params[:performed_by_id].present?
+        scoped = scoped.where(performer_id: params[:performer_id]) if params[:performer_id].present?
         scoped = scoped.where(chore_id: params[:chore_id]) if params[:chore_id].present?
+        scoped = scoped.where(chore_type: params[:chore_type]) if params[:chore_type].present?
         performed_from = parse_time(params[:performed_from])
         performed_to = parse_time(params[:performed_to])
         scoped = scoped.where('performed_at >= ?', performed_from) if performed_from
         scoped = scoped.where('performed_at <= ?', performed_to) if performed_to
         return scoped if params[:chore_name].blank?
 
-        scoped.joins(:chore).where('chores.name ILIKE ?', "%#{params[:chore_name]}%")
+        keyword = "%#{params[:chore_name]}%"
+        scoped.left_joins(:chore).where('chores.name ILIKE ? OR chore_records.custom_chore_name ILIKE ?', keyword, keyword)
       end
 
       def parse_time(value)
@@ -98,11 +96,11 @@ module Api
       end
 
       def create_params
-        params.permit(:text, :created_by_id)
+        params.permit(:text, :creator_id)
       end
 
       def update_params
-        params.permit(:performed_by_id, :chore_id, :contribution_points, :performed_at)
+        params.permit(:performer_id, :chore_id, :chore_type, :custom_chore_name, :contribution_points, :performed_at)
       end
 
       def render_create_error(result)
@@ -132,11 +130,13 @@ module Api
       def record_payload(record)
         {
           id: record.id,
+          chore_type: record.chore_type,
           chore_id: record.chore_id,
-          chore_name: record.chore.name,
-          performed_by_id: record.performed_by_id,
-          performed_by_name: record.performed_by.name,
-          created_by_id: record.created_by_id,
+          custom_chore_name: record.custom_chore_name,
+          chore_name: record.display_chore_name,
+          performer_id: record.performer_id,
+          performer_name: record.performer.name,
+          creator_id: record.creator_id,
           contribution_points: record.contribution_points.to_f,
           performed_at: record.performed_at.iso8601,
           source_text: record.source_text

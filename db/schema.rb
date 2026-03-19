@@ -19,16 +19,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_18_152621) do
     t.bigint "chore_id", null: false
     t.decimal "contribution_points", precision: 5, scale: 2, null: false
     t.datetime "created_at", null: false
-    t.bigint "created_by_id", null: false
+    t.bigint "creator_id", null: false
     t.datetime "performed_at", null: false
-    t.bigint "performed_by_id", null: false
+    t.bigint "performer_id", null: false
     t.text "source_text"
     t.datetime "updated_at", null: false
     t.index ["chore_id"], name: "index_chore_records_on_chore_id"
-    t.index ["created_by_id"], name: "index_chore_records_on_created_by_id"
+    t.index ["creator_id"], name: "index_chore_records_on_creator_id"
     t.index ["performed_at"], name: "index_chore_records_on_performed_at"
-    t.index ["performed_by_id", "performed_at"], name: "index_chore_records_on_performed_by_id_and_performed_at"
-    t.index ["performed_by_id"], name: "index_chore_records_on_performed_by_id"
+    t.index ["performer_id", "performed_at"], name: "index_chore_records_on_performer_id_and_performed_at"
+    t.index ["performer_id"], name: "index_chore_records_on_performer_id"
   end
 
   create_table "chores", force: :cascade do |t|
@@ -77,7 +77,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_18_152621) do
   end
 
   add_foreign_key "chore_records", "chores"
-  add_foreign_key "chore_records", "users", column: "created_by_id"
-  add_foreign_key "chore_records", "users", column: "performed_by_id"
+  add_foreign_key "chore_records", "users", column: "creator_id"
+  add_foreign_key "chore_records", "users", column: "performer_id"
   add_foreign_key "refresh_tokens", "users"
 end
