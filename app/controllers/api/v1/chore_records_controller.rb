@@ -30,7 +30,7 @@ module Api
       end
 
       def parse_from_text
-        params.permit!(:text)
+        params.permit!
         parse_payload = Ai::ChoreRecordParser.call(text: params[:text], current_user: current_user)
 
         @chore_record = ChoreRecord.create!(
@@ -45,7 +45,7 @@ module Api
           ai_parse_payload: parse_payload[:ai_parse_payload]
         )
 
-        render :show, status: :created
+        render :show
       rescue ActiveRecord::RecordInvalid => e
         render_validation_error(e.record)
       end
@@ -58,7 +58,7 @@ module Api
       def update
         return render_validation_error(@chore_record) unless @chore_record.update(update_params)
 
-        render json: { data: record_payload(@chore_record) }, status: :ok
+        render :show
       end
 
       def destroy
@@ -100,7 +100,7 @@ module Api
       end
 
       def update_params
-        params.permit(:performer_id, :chore_id, :chore_type, :custom_chore_name, :contribution_points, :performed_at)
+        params.require(:chore_record).permit(:performer_id, :chore_id, :chore_type, :custom_chore_name, :contribution_points, :performed_at)
       end
 
       def render_create_error(result)

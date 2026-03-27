@@ -10,16 +10,18 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_18_152621) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_19_000200) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
   create_table "chore_records", force: :cascade do |t|
     t.jsonb "ai_parse_payload"
-    t.bigint "chore_id", null: false
+    t.bigint "chore_id"
+    t.string "chore_type", default: "catalog", null: false
     t.decimal "contribution_points", precision: 5, scale: 2, null: false
     t.datetime "created_at", null: false
     t.bigint "creator_id", null: false
+    t.string "custom_chore_name"
     t.datetime "performed_at", null: false
     t.bigint "performer_id", null: false
     t.text "source_text"

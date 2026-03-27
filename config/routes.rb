@@ -13,14 +13,17 @@ Rails.application.routes.draw do
   # root "posts#index"
   namespace :api do
     namespace :v1 do
-      post 'auth/sign_in', to: 'auth#sign_in'
-      post 'auth/refresh', to: 'auth#refresh'
-      get 'auth/me', to: 'auth#me'
-      delete 'auth/sign_out', to: 'auth#sign_out'
-      patch 'auth/password', to: 'auth#password'
-      resources :chores, only: %i[index show create update]
-      resources :chore_records, only: %i[index show create update destroy] do
-        post 'parse_from_text', on: :collection
+      defaults format: 'json' do
+        post 'auth/sign_in', to: 'auth#sign_in'
+        post 'auth/refresh', to: 'auth#refresh'
+        get 'auth/me', to: 'auth#me'
+        delete 'auth/sign_out', to: 'auth#sign_out'
+        patch 'auth/password', to: 'auth#password'
+        resources :users, only: %i[index]
+        resources :chores, only: %i[index show create update]
+        resources :chore_records, only: %i[index show create update destroy] do
+          post 'parse_from_text', on: :collection
+        end
       end
     end
   end
