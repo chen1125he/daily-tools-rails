@@ -6,7 +6,7 @@ module Api
       before_action :set_chore, only: %i[show update]
 
       def index
-        chores = Chore.order(:name)
+        chores = Chore.order(:id)
         chores = chores.where(active: cast_boolean(params[:active])) if params.key?(:active)
 
         render json: { data: chores.map { |chore| chore_payload(chore) } }, status: :ok
