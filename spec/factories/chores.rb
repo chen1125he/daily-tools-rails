@@ -5,6 +5,6 @@ FactoryBot.define do
     sequence(:name) { |n| "家务#{n}" }
     active { true }
     description { '家务描述' }
-    default_contribution_points { 1 }
+    default_points { 1 }
   end
 end

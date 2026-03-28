@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_28_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_28_220000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -18,12 +18,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_28_120000) do
     t.jsonb "ai_parse_payload"
     t.bigint "chore_id"
     t.string "chore_type", default: "catalog", null: false
-    t.decimal "contribution_points", precision: 5, scale: 2, null: false
     t.datetime "created_at", null: false
     t.bigint "creator_id", null: false
     t.string "custom_chore_name"
     t.datetime "performed_at", null: false
     t.bigint "performer_id", null: false
+    t.decimal "points", precision: 5, scale: 2, null: false
     t.text "source_text"
     t.datetime "updated_at", null: false
     t.index ["chore_id"], name: "index_chore_records_on_chore_id"
@@ -36,7 +36,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_28_120000) do
   create_table "chores", force: :cascade do |t|
     t.boolean "active", default: true, null: false
     t.datetime "created_at", null: false
-    t.decimal "default_contribution_points", precision: 5, scale: 2, default: "1.0", comment: "默认贡献积分"
+    t.decimal "default_points", precision: 5, scale: 2, default: "1.0", comment: "默认贡献积分"
     t.text "description", comment: "家务描述"
     t.string "name", null: false
     t.text "search_keywords"

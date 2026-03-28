@@ -36,7 +36,7 @@ module Ai
           chore_name: mapped_chore&.dig(:name) || ai_result[:custom_chore_name],
           performer_name: @resolved_user_list.find { |item| item[:id] == ai_result[:performer_id] }[:name],
           performer_id: ai_result[:performer_id] || @current_user.id,
-          contribution_points: ai_result[:contribution_points] || mapped_chore&.dig(:default_contribution_points) || 1.0,
+          points: ai_result[:points] || mapped_chore&.dig(:default_points) || 1.0,
           performed_at: ai_result[:performed_at] || Time.current,
           ai_parse_payload: ai_result
         }
@@ -50,7 +50,7 @@ module Ai
             id: chore.id,
             name: chore.name.to_s,
             description: chore.description.to_s,
-            default_contribution_points: chore.default_contribution_points&.to_f
+            default_points: chore.default_points&.to_f
           }
         end
       end
@@ -65,7 +65,7 @@ module Ai
             id: id.to_i,
             name: name.to_s,
             description: (item[:description] || item['description']).to_s,
-            default_contribution_points: to_optional_float(item[:default_contribution_points] || item['default_contribution_points'])
+            default_points: to_optional_float(item[:default_points] || item['default_points'])
           }
         end
       end
@@ -93,7 +93,9 @@ module Ai
         custom_chore_name = chore_type == 'custom' ? parsed['custom_chore_name'].to_s.strip : nil
         raise ParseError, 'custom_chore_name 不能为空' if chore_type == 'custom' && custom_chore_name.blank?
 
-        points = to_optional_decimal(parsed['contribution_points'])
+        points = to_optional_decimal(
+          parsed.key?('points') ? parsed['points'] : parsed['contribution_points']
+        )
         performer_id = parsed['performer_id'].present? ? Integer(parsed['performer_id']) : @current_user.id
         performed_at = parsed['performed_at'].present? ? Date.parse(parsed['performed_at']) : nil
 
@@ -101,7 +103,7 @@ module Ai
           chore_type: chore_type,
           chore_id: chore_id,
           custom_chore_name: custom_chore_name,
-          contribution_points: points,
+          points: points,
           performer_id: performer_id,
           performed_at: performed_at,
           ai_parse_payload: response.merge(prompt: prompt)
@@ -140,7 +142,7 @@ module Ai
              - chore_type: String，只能是 "catalog" 或 "custom" 自定义家务类型为 "custom"，默认类型为 "catalog"。
              - custom_chore_name: String，仅在 chore_type="custom" 时返回，必须返回自定义家务名称。
              - chore_id: Integer，仅在 chore_type="catalog" 时返回，必须来自候选列表中的 id
-             - contribution_points: Number，必须大于 0, 如果输入里没有明确分数，返回空值(nil)。
+             - points: Number，必须大于 0, 如果输入里没有明确分数，返回空值(nil)。
              - performer_id: Integer，必须来自角色信息中的 id, 如果输入里没有明确参与者，返回空值(nil)。
              - performed_at: Date，推算出家务完成的日期, 如果用户输入里没有明确日期，返回空值(nil)。
           2) 不允许新增字段，不允许解释。

@@ -38,19 +38,19 @@ RSpec.describe 'Chores API', type: :request do
           name: { type: :string },
           active: { type: :boolean },
           description: { type: :string, nullable: true },
-          default_contribution_points: { type: :number, nullable: true }
+          default_points: { type: :number, nullable: true }
         }
       }
 
       response '201', 'created' do
         let!(:user) { create(:user) }
         let(:Authorization) { "Bearer #{Auth::TokenIssuer.issue_pair(user: user)[:access_token]}" }
-        let(:payload) { { name: '洗碗', default_contribution_points: 0.5 } }
+        let(:payload) { { name: '洗碗', default_points: 0.5 } }
 
         run_test! do |response|
           data = response.parsed_body['data']
           expect(data['name']).to eq('洗碗')
-          expect(data['default_contribution_points']).to eq(0.5)
+          expect(data['default_points']).to eq(0.5)
         end
       end
     end
@@ -66,7 +66,7 @@ RSpec.describe 'Chores API', type: :request do
 
       response '200', 'ok' do
         let!(:user) { create(:user) }
-        let!(:chore) { create(:chore, name: '洗碗', default_contribution_points: 1.5) }
+        let!(:chore) { create(:chore, name: '洗碗', default_points: 1.5) }
         let(:Authorization) { "Bearer #{Auth::TokenIssuer.issue_pair(user: user)[:access_token]}" }
         let(:id) { chore.id }
 
@@ -74,7 +74,7 @@ RSpec.describe 'Chores API', type: :request do
           data = response.parsed_body['data']
           expect(data['id']).to eq(chore.id)
           expect(data['name']).to eq('洗碗')
-          expect(data['default_contribution_points']).to eq(1.5)
+          expect(data['default_points']).to eq(1.5)
         end
       end
 

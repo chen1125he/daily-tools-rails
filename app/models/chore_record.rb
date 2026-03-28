@@ -7,7 +7,7 @@ class ChoreRecord < ApplicationRecord
   belongs_to :performer, class_name: 'User', inverse_of: :performed_chore_records
   belongs_to :creator, class_name: 'User', inverse_of: :created_chore_records
 
-  validates :contribution_points, numericality: { greater_than_or_equal_to: 0 }
+  validates :points, numericality: { greater_than_or_equal_to: 0 }
   validates :performed_at, presence: true
   validates :custom_chore_name, presence: true, if: :custom?
   validate :catalog_chore_required

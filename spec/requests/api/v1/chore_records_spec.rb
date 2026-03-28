@@ -28,7 +28,7 @@ RSpec.describe 'Chore Records API', type: :request do
           data = response.parsed_body['data']
           meta = response.parsed_body['meta']
           expect(data['chore_name']).to eq('做饭')
-          expect(data['contribution_points']).to eq(1.5)
+          expect(data['points']).to eq(1.5)
           expect(meta).to include('ai_confidence', 'needs_review')
         end
       end
@@ -106,19 +106,19 @@ RSpec.describe 'Chore Records API', type: :request do
       parameter name: :payload, in: :body, schema: {
         type: :object,
         properties: {
-          contribution_points: { type: :number }
+          points: { type: :number }
         }
       }
 
       response '200', 'updated' do
         let!(:user) { create(:user, name: '创建者') }
-        let!(:chore_record) { create(:chore_record, creator: user, performer: user, contribution_points: 1.0) }
+        let!(:chore_record) { create(:chore_record, creator: user, performer: user, points: 1.0) }
         let(:Authorization) { "Bearer #{Auth::TokenIssuer.issue_pair(user: user)[:access_token]}" }
         let(:id) { chore_record.id }
-        let(:payload) { { contribution_points: 2.5 } }
+        let(:payload) { { points: 2.5 } }
 
         run_test! do |response|
-          expect(response.parsed_body['data']['contribution_points']).to eq(2.5)
+          expect(response.parsed_body['data']['points']).to eq(2.5)
         end
       end
     end

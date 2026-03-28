@@ -38,7 +38,7 @@ module Api
       end
 
       def chore_params
-        params.permit(:name, :active, :description, :search_keywords, :default_contribution_points)
+        params.require(:chore).permit(:name, :active, :description, :search_keywords, :default_points)
       end
 
       def chore_payload(chore)
@@ -48,7 +48,7 @@ module Api
           active: chore.active,
           description: chore.description,
           search_keywords: chore.search_keywords,
-          default_contribution_points: chore.default_contribution_points&.to_f
+          default_points: chore.default_points&.to_f
         }
       end
 
