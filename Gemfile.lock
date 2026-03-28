@@ -145,6 +145,7 @@ GEM
       prism (>= 1.3.0)
       rdoc (>= 4.0.0)
       reline (>= 0.4.2)
+    jieba_rb (0.0.5)
     json (2.19.1)
     json-schema (6.2.0)
       addressable (~> 2.8)
@@ -403,6 +404,7 @@ DEPENDENCIES
   dotenv-rails
   factory_bot_rails (~> 6.5)
   faraday
+  jieba_rb
   jwt
   pg (~> 1.1)
   puma (>= 5.0)

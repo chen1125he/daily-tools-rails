@@ -45,7 +45,7 @@ module Ai
       private
 
       def default_chore_catalog
-        Chore.active.map do |chore|
+        Chore.active.search_fulltext(@normalized_text).map do |chore|
           {
             id: chore.id,
             name: chore.name.to_s,

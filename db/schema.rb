@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_19_000200) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_28_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -39,8 +39,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_19_000200) do
     t.decimal "default_contribution_points", precision: 5, scale: 2, default: "1.0", comment: "默认贡献积分"
     t.text "description", comment: "家务描述"
     t.string "name", null: false
+    t.text "search_keywords"
+    t.text "search_tokens"
+    t.tsvector "search_vector"
     t.datetime "updated_at", null: false
     t.index "lower((name)::text)", name: "index_chores_on_lower_name", unique: true
+    t.index ["search_vector"], name: "index_chores_on_search_vector", using: :gin
   end
 
   create_table "refresh_tokens", force: :cascade do |t|
