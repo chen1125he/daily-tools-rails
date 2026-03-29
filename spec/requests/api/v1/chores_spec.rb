@@ -7,7 +7,7 @@ RSpec.describe 'Chores API', type: :request do
     get 'List chores' do
       tags 'Chores'
       produces 'application/json'
-      security [{ bearerAuth: [] }]
+      security [ { bearerAuth: [] } ]
       parameter name: :Authorization, in: :header, schema: { type: :string }
 
       response '200', 'ok' do
@@ -29,11 +29,11 @@ RSpec.describe 'Chores API', type: :request do
       tags 'Chores'
       consumes 'application/json'
       produces 'application/json'
-      security [{ bearerAuth: [] }]
+      security [ { bearerAuth: [] } ]
       parameter name: :Authorization, in: :header, schema: { type: :string }
       parameter name: :payload, in: :body, schema: {
         type: :object,
-        required: ['name'],
+        required: [ 'name' ],
         properties: {
           name: { type: :string },
           active: { type: :boolean },
@@ -60,7 +60,7 @@ RSpec.describe 'Chores API', type: :request do
     get 'Show a chore' do
       tags 'Chores'
       produces 'application/json'
-      security [{ bearerAuth: [] }]
+      security [ { bearerAuth: [] } ]
       parameter name: :Authorization, in: :header, schema: { type: :string }
       parameter name: :id, in: :path, schema: { type: :integer }
 
@@ -94,7 +94,7 @@ RSpec.describe 'Chores API', type: :request do
       tags 'Chores'
       consumes 'application/json'
       produces 'application/json'
-      security [{ bearerAuth: [] }]
+      security [ { bearerAuth: [] } ]
       parameter name: :Authorization, in: :header, schema: { type: :string }
       parameter name: :id, in: :path, schema: { type: :integer }
       parameter name: :payload, in: :body, schema: {

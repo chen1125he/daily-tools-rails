@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module AliyunAi
   class << self
     def base_url

@@ -14,7 +14,7 @@ set :pty, false
 
 set :rbenv_type, :user
 set :rbenv_ruby, '3.3.9'
-set :service_unit_env_files, ['/etc/systemd/system/daily_tools_rails.env']
+set :service_unit_env_files, [ '/etc/systemd/system/daily_tools_rails.env' ]
 
 append :linked_files, 'config/master.key', 'config/credentials/production.key'
 append :linked_dirs, 'log', 'tmp/pids', 'tmp/cache', 'tmp/sockets', 'storage', '.bundle'
@@ -30,7 +30,7 @@ set :keep_releases, 5
 set :puma_init_active_record, true
 set :puma_role, :app
 set :puma_bind, "unix://#{shared_path}/tmp/sockets/puma.sock"
-set :puma_service_unit_env_vars, ["PUMA_BIND=unix://#{fetch(:deploy_to)}/shared/tmp/sockets/puma.sock"]
+set :puma_service_unit_env_vars, [ "PUMA_BIND=unix://#{fetch(:deploy_to)}/shared/tmp/sockets/puma.sock" ]
 
 # Sidekiq
 set :sidekiq_roles, :app

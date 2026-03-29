@@ -20,13 +20,13 @@ class Chore < ApplicationRecord
     ranked = lambda do |rel, rank_tsquery_sql, rank_binds|
       next rel unless relevance
 
-      rel.order(Arel.sql(klass.sanitize_sql_array(["ts_rank(search_vector, #{rank_tsquery_sql}) DESC", *rank_binds])))
+      rel.order(Arel.sql(klass.sanitize_sql_array([ "ts_rank(search_vector, #{rank_tsquery_sql}) DESC", *rank_binds ])))
     end
 
     if match == :all
       q = tokens.join(' ')
       rel = relation.where('search_vector @@ plainto_tsquery(\'simple\', ?)', q)
-      ranked.call(rel, 'plainto_tsquery(\'simple\', ?)', [q])
+      ranked.call(rel, 'plainto_tsquery(\'simple\', ?)', [ q ])
     else
       first, *rest = tokens.map { |t| relation.where('search_vector @@ plainto_tsquery(\'simple\', ?)', t) }
       combined = rest.reduce(first) { |acc, scope| acc.or(scope) }
@@ -60,12 +60,12 @@ class Chore < ApplicationRecord
     return nil if token_string.blank?
 
     connection.select_value(
-      sanitize_sql_array(['SELECT to_tsvector(\'simple\', ?::text)', token_string])
+      sanitize_sql_array([ 'SELECT to_tsvector(\'simple\', ?::text)', token_string ])
     )
   end
 
   def rebuild_search_vector!
-    combined = [name, search_keywords].compact.join(' ')
+    combined = [ name, search_keywords ].compact.join(' ')
     self.search_tokens = self.class.segment_text(combined).join(' ')
     self.search_vector =
       if search_tokens.blank?

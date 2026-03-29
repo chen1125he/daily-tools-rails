@@ -6,23 +6,15 @@ module Api
       before_action :set_chore_record, only: %i[show update destroy]
 
       def index
-        records = ChoreRecord.includes(:chore, :performer, :creator)
-        records = apply_filters(records)
-        records = records.order(performed_at: :desc, id: :desc)
+        @chore_records = ChoreRecord.includes(:chore, :performer, :creator)
 
-        page = [params.fetch(:page, 1).to_i, 1].max
-        per_page = [[params.fetch(:per_page, 20).to_i, 1].max, 100].min
-        total = records.count
-        paginated = records.offset((page - 1) * per_page).limit(per_page)
+        filter_by_performer_id
+        filter_by_chore_id
+        filter_by_performed_at
 
-        render json: {
-          data: paginated.map { |record| record_payload(record) },
-          meta: {
-            page: page,
-            per_page: per_page,
-            total: total
-          }
-        }, status: :ok
+        @chore_records = @chore_records.order(performed_at: :desc, id: :desc)
+
+        @pagy, @chore_records = pagy(@chore_records)
       end
 
       def show
@@ -45,14 +37,26 @@ module Api
           ai_parse_payload: parse_payload[:ai_parse_payload]
         )
 
-        render :show
+        render :show, status: :created
       rescue ActiveRecord::RecordInvalid => e
         render_validation_error(e.record)
+      rescue Ai::ChoreRecordParser::ParseError => e
+        render json: { error: { code: 'CHORE_RECORD_PARSE_FAILED', message: e.message } },
+               status: :unprocessable_entity
       end
 
       def create
-        # TODO: 实现手动创建家务记录
-        render json: { data: record_payload(@chore_record) }, status: :created
+        record = ChoreRecord.new(manual_create_params)
+        record.creator_id = current_user.id
+        record.chore_type = 'catalog' if record.chore_type.blank?
+        normalize_chore_record_for_create!(record)
+        record.save!
+        @chore_record = ChoreRecord.includes(:chore, :performer, :creator).find(record.id)
+        render :show, status: :created
+      rescue ActiveRecord::RecordInvalid => e
+        render_validation_error(e.record)
+      rescue ActionController::ParameterMissing => e
+        render json: { error: { code: 'INVALID_PARAMS', message: e.message } }, status: :bad_request
       end
 
       def update
@@ -74,19 +78,26 @@ module Api
         render_not_found('CHORE_RECORD_NOT_FOUND', '家务记录不存在')
       end
 
-      def apply_filters(records)
-        scoped = records
-        scoped = scoped.where(performer_id: params[:performer_id]) if params[:performer_id].present?
-        scoped = scoped.where(chore_id: params[:chore_id]) if params[:chore_id].present?
-        scoped = scoped.where(chore_type: params[:chore_type]) if params[:chore_type].present?
-        performed_from = parse_time(params[:performed_from])
-        performed_to = parse_time(params[:performed_to])
-        scoped = scoped.where('performed_at >= ?', performed_from) if performed_from
-        scoped = scoped.where('performed_at <= ?', performed_to) if performed_to
-        return scoped if params[:chore_name].blank?
+      def filter_by_performer_id
+        return unless params[:performer_id].present?
 
-        keyword = "%#{params[:chore_name]}%"
-        scoped.left_joins(:chore).where('chores.name ILIKE ? OR chore_records.custom_chore_name ILIKE ?', keyword, keyword)
+        @chore_records = @chore_records.where(performer_id: params[:performer_id])
+      end
+
+      def filter_by_chore_id
+        return unless params[:chore_id].present?
+
+        @chore_records = @chore_records.where(chore_id: params[:chore_id])
+      end
+
+      def filter_by_performed_at
+        return unless params[:performed_at_from].present? && params[:performed_at_to].present?
+
+        performed_at_from = parse_time(params[:performed_at_from])
+        performed_at_to = parse_time(params[:performed_at_to])
+        return unless performed_at_from && performed_at_to
+
+        @chore_records = @chore_records.where(performed_at: performed_at_from..performed_at_to)
       end
 
       def parse_time(value)
@@ -95,8 +106,18 @@ module Api
         nil
       end
 
-      def create_params
-        params.permit(:text, :creator_id)
+      def manual_create_params
+        params.require(:chore_record).permit(
+          :chore_type, :chore_id, :custom_chore_name, :points, :performer_id, :performed_at, :source_text
+        )
+      end
+
+      def normalize_chore_record_for_create!(record)
+        if record.custom?
+          record.chore_id = nil
+        else
+          record.custom_chore_name = nil
+        end
       end
 
       def update_params

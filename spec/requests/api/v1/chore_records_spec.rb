@@ -3,43 +3,112 @@
 require 'swagger_helper'
 
 RSpec.describe 'Chore Records API', type: :request do
+  include_context 'api request authentication helper methods'
+
   path '/api/v1/chore_records' do
-    post 'Create chore record from text' do
+    post 'Create chore record' do
       tags 'ChoreRecords'
       consumes 'application/json'
       produces 'application/json'
-      security [{ bearerAuth: [] }]
+      security [ { bearerAuth: [] } ]
       parameter name: :Authorization, in: :header, schema: { type: :string }
       parameter name: :payload, in: :body, schema: {
         type: :object,
-        required: ['text'],
+        required: [ 'chore_record' ],
         properties: {
-          text: { type: :string },
-          creator_id: { type: :integer }
+          chore_record: {
+            type: :object,
+            required: %w[chore_type points performer_id performed_at],
+            properties: {
+              chore_type: { type: :string, enum: %w[catalog custom] },
+              chore_id: { type: :integer },
+              custom_chore_name: { type: :string },
+              points: { type: :number },
+              performer_id: { type: :integer },
+              performed_at: { type: :string },
+              source_text: { type: :string }
+            }
+          }
         }
       }
 
-      response '201', 'created' do
-        let!(:user) { create(:user, name: '小红') }
+      response '201', 'created catalog' do
+        let!(:user) { create(:user, name: '创建者') }
+        let!(:performer) { create(:user, name: '执行者') }
+        let!(:chore) { create(:chore, name: '洗碗') }
         let(:Authorization) { "Bearer #{Auth::TokenIssuer.issue_pair(user: user)[:access_token]}" }
-        let(:payload) { { text: '昨晚我做饭 1.5 小时', creator_id: user.id } }
+        let(:payload) do
+          {
+            chore_record: {
+              chore_type: 'catalog',
+              chore_id: chore.id,
+              performer_id: performer.id,
+              points: 2.5,
+              performed_at: '2026-03-08T20:00:00Z',
+              source_text: '手动录入'
+            }
+          }
+        end
 
         run_test! do |response|
-          data = response.parsed_body['data']
-          meta = response.parsed_body['meta']
-          expect(data['chore_name']).to eq('做饭')
-          expect(data['points']).to eq(1.5)
-          expect(meta).to include('ai_confidence', 'needs_review')
+          expect(response).to have_http_status(:created)
+          data = json['data']
+          expect(data['chore_type']).to eq('catalog')
+          expect(data['chore_id']).to eq(chore.id)
+          expect(data['chore_name']).to eq('洗碗')
+          expect(data['performer_id']).to eq(performer.id)
+          expect(data['creator_id']).to eq(user.id)
+          expect(data['points']).to eq('2.5')
+          expect(data['source_text']).to eq('手动录入')
         end
       end
 
-      response '422', 'parse failed' do
-        let!(:user) { create(:user, name: '小红') }
+      response '201', 'created custom' do
+        let!(:user) { create(:user, name: '创建者') }
+        let!(:performer) { create(:user, name: '执行者') }
         let(:Authorization) { "Bearer #{Auth::TokenIssuer.issue_pair(user: user)[:access_token]}" }
-        let(:payload) { { text: '' } }
+        let(:payload) do
+          {
+            chore_record: {
+              chore_type: 'custom',
+              custom_chore_name: '整理地下室',
+              performer_id: performer.id,
+              points: 1.0,
+              performed_at: '2026-03-09T10:00:00Z'
+            }
+          }
+        end
 
         run_test! do |response|
-          expect(response.parsed_body['error']['code']).to eq('CHORE_RECORD_PARSE_FAILED')
+          expect(response).to have_http_status(:created)
+          data = json['data']
+          expect(data['chore_type']).to eq('custom')
+          expect(data['chore_id']).to be_nil
+          expect(data['custom_chore_name']).to eq('整理地下室')
+          expect(data['chore_name']).to eq('整理地下室')
+          expect(data['points']).to eq('1.0')
+        end
+      end
+
+      response '422', 'validation failed' do
+        let!(:user) { create(:user, name: '创建者') }
+        let!(:performer) { create(:user, name: '执行者') }
+        let(:Authorization) { "Bearer #{Auth::TokenIssuer.issue_pair(user: user)[:access_token]}" }
+        let(:payload) do
+          {
+            chore_record: {
+              chore_type: 'catalog',
+              chore_id: nil,
+              performer_id: performer.id,
+              points: 1.0,
+              performed_at: '2026-03-09T10:00:00Z'
+            }
+          }
+        end
+
+        run_test! do |response|
+          expect(response).to have_http_status(422)
+          expect(json['error']['code']).to eq('VALIDATION_FAILED')
         end
       end
     end
@@ -47,10 +116,15 @@ RSpec.describe 'Chore Records API', type: :request do
     get 'List chore records' do
       tags 'ChoreRecords'
       produces 'application/json'
-      security [{ bearerAuth: [] }]
+      security [ { bearerAuth: [] } ]
       parameter name: :Authorization, in: :header, schema: { type: :string }
-      parameter name: :performer_id, in: :query, schema: { type: :integer }
-      parameter name: :chore_name, in: :query, schema: { type: :string }
+      parameter name: :performer_id, in: :query, schema: { type: :integer }, required: false
+      parameter name: :chore_id, in: :query, schema: { type: :integer }, required: false
+      parameter name: :performed_at_from, in: :query, schema: { type: :string }, required: false
+      parameter name: :performed_at_to, in: :query, schema: { type: :string }, required: false
+      parameter name: :chore_name, in: :query, schema: { type: :string }, required: false
+      parameter name: :page, in: :query, schema: { type: :integer }, required: false
+      parameter name: :limit, in: :query, schema: { type: :integer }, required: false
 
       response '200', 'ok' do
         let!(:user) { create(:user, name: '创建者') }
@@ -68,9 +142,65 @@ RSpec.describe 'Chore Records API', type: :request do
         let(:chore_name) { '做' }
 
         run_test! do |response|
-          data = response.parsed_body['data']
+          data = json['data']
           expect(data.map { |item| item['id'] }).to contain_exactly(matched.id)
-          expect(response.parsed_body['meta']['total']).to eq(1)
+          expect(json['meta']['total_count']).to eq(1)
+        end
+      end
+
+      response '200', 'paginated first page' do
+        let!(:user) { create(:user) }
+        let!(:chore) { create(:chore) }
+        let!(:records) do
+          base = Time.zone.parse('2026-03-01 12:00:00')
+          5.times.map do |i|
+            create(:chore_record, chore: chore, performer: user, creator: user, performed_at: base + i.seconds)
+          end
+        end
+        let(:Authorization) { "Bearer #{Auth::TokenIssuer.issue_pair(user: user)[:access_token]}" }
+        let(:page) { 1 }
+        let(:limit) { 2 }
+
+        let(:ordered_ids) do
+          records.sort_by { |r| [ -r.performed_at.to_f, -r.id ] }.map(&:id)
+        end
+
+        run_test! do |response|
+          expect(json['data'].size).to eq(2)
+          expect(json['data'].map { |row| row['id'] }).to eq(ordered_ids.first(2))
+          expect(json['meta']).to include(
+            'total_count' => 5,
+            'total_pages' => 3,
+            'current_page' => 1,
+            'next_page' => 2
+          )
+        end
+      end
+
+      response '200', 'paginated last page' do
+        let!(:user) { create(:user) }
+        let!(:chore) { create(:chore) }
+        let!(:records) do
+          base = Time.zone.parse('2026-03-01 12:00:00')
+          5.times.map do |i|
+            create(:chore_record, chore: chore, performer: user, creator: user, performed_at: base + i.seconds)
+          end
+        end
+        let(:Authorization) { "Bearer #{Auth::TokenIssuer.issue_pair(user: user)[:access_token]}" }
+        let(:page) { 3 }
+        let(:limit) { 2 }
+
+        let(:ordered_ids) do
+          records.sort_by { |r| [ -r.performed_at.to_f, -r.id ] }.map(&:id)
+        end
+
+        run_test! do |response|
+          expect(json['data'].map { |row| row['id'] }).to eq([ ordered_ids[4] ])
+          expect(json['meta']).to include(
+            'current_page' => 3,
+            'next_page' => nil,
+            'total_count' => 5
+          )
         end
       end
     end
@@ -80,7 +210,7 @@ RSpec.describe 'Chore Records API', type: :request do
     get 'Show chore record' do
       tags 'ChoreRecords'
       produces 'application/json'
-      security [{ bearerAuth: [] }]
+      security [ { bearerAuth: [] } ]
       parameter name: :Authorization, in: :header, schema: { type: :string }
       parameter name: :id, in: :path, schema: { type: :integer }
 
@@ -91,7 +221,7 @@ RSpec.describe 'Chore Records API', type: :request do
         let(:id) { chore_record.id }
 
         run_test! do |response|
-          expect(response.parsed_body['data']['id']).to eq(chore_record.id)
+          expect(json['data']['id']).to eq(chore_record.id)
         end
       end
     end
@@ -100,7 +230,7 @@ RSpec.describe 'Chore Records API', type: :request do
       tags 'ChoreRecords'
       consumes 'application/json'
       produces 'application/json'
-      security [{ bearerAuth: [] }]
+      security [ { bearerAuth: [] } ]
       parameter name: :Authorization, in: :header, schema: { type: :string }
       parameter name: :id, in: :path, schema: { type: :integer }
       parameter name: :payload, in: :body, schema: {
@@ -118,14 +248,14 @@ RSpec.describe 'Chore Records API', type: :request do
         let(:payload) { { points: 2.5 } }
 
         run_test! do |response|
-          expect(response.parsed_body['data']['points']).to eq(2.5)
+          expect(json['data']['points']).to eq("2.5")
         end
       end
     end
 
     delete 'Delete chore record' do
       tags 'ChoreRecords'
-      security [{ bearerAuth: [] }]
+      security [ { bearerAuth: [] } ]
       parameter name: :Authorization, in: :header, schema: { type: :string }
       parameter name: :id, in: :path, schema: { type: :integer }
 

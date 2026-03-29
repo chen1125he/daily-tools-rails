@@ -17,7 +17,7 @@ module Ai
         @resolved_user_list = User.all.map do |user|
           {
             id: user.id,
-            name: current_user.id == user.id ? "#{user.name} (我自己)" : user.name.to_s,
+            name: current_user.id == user.id ? "#{user.name} (我自己)" : user.name.to_s
           }
         end
 
