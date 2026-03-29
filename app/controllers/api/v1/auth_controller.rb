@@ -63,15 +63,15 @@ module Api
       private
 
       def sign_in_params
-        params.permit(:phone, :password)
+        params.require(:auth).permit(:phone, :password)
       end
 
       def refresh_params
-        params.permit(:refresh_token)
+        params.require(:auth).permit(:refresh_token)
       end
 
       def sign_out_params
-        params.permit(:refresh_token)
+        params.require(:auth).permit(:refresh_token)
       end
 
       def password_params
