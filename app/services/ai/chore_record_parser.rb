@@ -98,6 +98,7 @@ module Ai
         )
         performer_id = parsed['performer_id'].present? ? Integer(parsed['performer_id']) : @current_user.id
         performed_at = parsed['performed_at'].present? ? Date.parse(parsed['performed_at']) : nil
+        performed_at = performed_at.present? && performed_at.today? ? Time.current : nil
 
         {
           chore_type: chore_type,

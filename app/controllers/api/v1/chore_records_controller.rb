@@ -6,7 +6,7 @@ module Api
       before_action :set_chore_record, only: %i[show update destroy]
 
       def index
-        @chore_records = ChoreRecord.includes(:chore, :performer, :creator)
+        @chore_records = ChoreRecord.preload(:chore, :performer, :creator)
 
         filter_by_performer_id
         filter_by_chore_id

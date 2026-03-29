@@ -11,7 +11,9 @@
 #
 Pagy::OPTIONS[:limit] = 20               # Limit the items per page
 Pagy::OPTIONS[:client_max_limit] = 100   # The client is allowed to request a limit up to 100
-# Pagy::OPTIONS[:jsonapi] = true           # Use JSON:API compliant URLs
+# JSON API 模式会把分页参数嵌套在 `page` 下（如 page[number]）。若使用扁平查询 `?page=1`，`params['page']`
+# 是字符串，Pagy 内部会对 Hash 做 #dig，从而触发 TypeError (String does not have #dig method)。
+Pagy::OPTIONS[:jsonapi] = false
 
 Pagy::OPTIONS.freeze
 
