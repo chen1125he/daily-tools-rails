@@ -12,6 +12,15 @@ module Api
         filter_by_chore_id
         filter_by_performed_at
 
+        @summary = @chore_records.group(:performer_id).sum(:points)
+        @summary = @summary.map do |performer_id, points|
+          {
+            performer_id: performer_id,
+            performer_name: User.find(performer_id).name,
+            points: points
+          }
+        end
+
         @chore_records = @chore_records.order(performed_at: :desc, id: :desc)
 
         @pagy, @chore_records = pagy(@chore_records)
