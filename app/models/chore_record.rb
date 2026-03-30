@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class ChoreRecord < ApplicationRecord
+  include SoftDeletable
+
   enum :chore_type, { catalog: 'catalog', custom: 'custom' }
 
   belongs_to :chore, optional: true

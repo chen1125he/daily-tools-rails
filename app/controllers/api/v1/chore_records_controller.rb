@@ -6,7 +6,7 @@ module Api
       before_action :set_chore_record, only: %i[show update destroy]
 
       def index
-        @chore_records = ChoreRecord.preload(:chore, :performer, :creator)
+        @chore_records = ChoreRecord.present.preload(:chore, :performer, :creator)
 
         filter_by_performer_id
         filter_by_chore_id
@@ -66,7 +66,7 @@ module Api
       end
 
       def destroy
-        @chore_record.destroy!
+        @chore_record.remove
 
         render_api_success(record_payload(@chore_record))
       end
@@ -74,7 +74,7 @@ module Api
       private
 
       def set_chore_record
-        @chore_record = ChoreRecord.includes(:chore, :performer, :creator).find(params[:id])
+        @chore_record = ChoreRecord.present.includes(:chore, :performer, :creator).find(params[:id])
       rescue ActiveRecord::RecordNotFound
         render_not_found('CHORE_RECORD_NOT_FOUND', '家务记录不存在')
       end
