@@ -67,7 +67,8 @@ module Api
 
       def destroy
         @chore_record.destroy!
-        head :no_content
+
+        render_api_success(record_payload(@chore_record))
       end
 
       private
