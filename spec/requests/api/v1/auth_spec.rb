@@ -127,6 +127,7 @@ RSpec.describe "Auth API", type: :request do
 
         run_test! do |response|
           expect(response.parsed_body).to eq(
+            "code" => 0,
             "data" => {
               "id" => user.id,
               "phone" => user.phone,

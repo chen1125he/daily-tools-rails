@@ -18,7 +18,7 @@ module Api
       end
 
       def show
-        render json: { data: record_payload(@chore_record) }, status: :ok
+        render_api_success(record_payload(@chore_record))
       end
 
       def parse_from_text

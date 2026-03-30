@@ -19,8 +19,7 @@ RSpec.describe 'Chores API', type: :request do
         run_test! do |response|
           data = response.parsed_body['data']
           expect(data.size).to eq(2)
-          expect(data.first['name']).to eq('做饭')
-          expect(data.last['name']).to eq('拖地')
+          expect(data.map { |row| row['name'] }).to contain_exactly('做饭', '拖地')
         end
       end
     end

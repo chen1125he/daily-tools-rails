@@ -142,9 +142,9 @@ RSpec.describe 'Chore Records API', type: :request do
         let(:chore_name) { '做' }
 
         run_test! do |response|
-          data = json['data']
-          expect(data.map { |item| item['id'] }).to contain_exactly(matched.id)
-          expect(json['meta']['total_count']).to eq(1)
+          items = json['data']['items']
+          expect(items.map { |item| item['id'] }).to contain_exactly(matched.id)
+          expect(json['data']['meta']['total_count']).to eq(1)
         end
       end
 
@@ -166,9 +166,9 @@ RSpec.describe 'Chore Records API', type: :request do
         end
 
         run_test! do |response|
-          expect(json['data'].size).to eq(2)
-          expect(json['data'].map { |row| row['id'] }).to eq(ordered_ids.first(2))
-          expect(json['meta']).to include(
+          expect(json['data']['items'].size).to eq(2)
+          expect(json['data']['items'].map { |row| row['id'] }).to eq(ordered_ids.first(2))
+          expect(json['data']['meta']).to include(
             'total_count' => 5,
             'total_pages' => 3,
             'current_page' => 1,
@@ -195,8 +195,8 @@ RSpec.describe 'Chore Records API', type: :request do
         end
 
         run_test! do |response|
-          expect(json['data'].map { |row| row['id'] }).to eq([ ordered_ids[4] ])
-          expect(json['meta']).to include(
+          expect(json['data']['items'].map { |row| row['id'] }).to eq([ ordered_ids[4] ])
+          expect(json['data']['meta']).to include(
             'current_page' => 3,
             'next_page' => nil,
             'total_count' => 5

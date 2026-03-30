@@ -15,7 +15,7 @@ module Api
 
         return render_auth_result_error(result) unless result.success?
 
-        render json: { data: result.payload }, status: :ok
+        render_api_success(result.payload)
       end
 
       def refresh
@@ -27,17 +27,17 @@ module Api
 
         return render_auth_result_error(result) unless result.success?
 
-        render json: { data: result.payload }, status: :ok
+        render_api_success(result.payload)
       end
 
       def me
-        render json: {
-          data: {
+        render_api_success(
+          {
             id: current_user.id,
             phone: current_user.phone,
             name: current_user.name
           }
-        }, status: :ok
+        )
       end
 
       def sign_out

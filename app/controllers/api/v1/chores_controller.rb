@@ -9,24 +9,24 @@ module Api
         chores = Chore.order(id: :desc)
         chores = chores.where(active: cast_boolean(params[:active])) if params.key?(:active)
 
-        render json: { data: chores.map { |chore| chore_payload(chore) } }, status: :ok
+        render_api_success(chores.map { |chore| chore_payload(chore) })
       end
 
       def create
         chore = Chore.new(chore_params)
         return render_validation_error(chore) unless chore.save
 
-        render json: { data: chore_payload(chore) }, status: :created
+        render_api_success(chore_payload(chore), status: :created)
       end
 
       def show
-        render json: { data: chore_payload(@chore) }, status: :ok
+        render_api_success(chore_payload(@chore))
       end
 
       def update
         return render_validation_error(@chore) unless @chore.update(chore_params)
 
-        render json: { data: chore_payload(@chore) }, status: :ok
+        render_api_success(chore_payload(@chore))
       end
 
       private

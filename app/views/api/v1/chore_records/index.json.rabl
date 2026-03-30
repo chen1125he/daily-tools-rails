@@ -1,9 +1,14 @@
 # frozen_string_literal: true
 
-child @chore_records => :data do
-  extends 'api/v1/chore_records/base'
-end
+object false
 
-child(:meta) do
-  extends 'api/v1/meta/base'
+node(:code) { 0 }
+
+child(:data) do
+  child @chore_records => :items do
+    extends 'api/v1/chore_records/base'
+  end
+  child(:meta) do
+    extends 'api/v1/meta/base'
+  end
 end
