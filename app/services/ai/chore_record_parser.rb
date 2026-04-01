@@ -70,6 +70,7 @@ module Ai
         raise ParseError, "AI 响应为空: #{response}" if content.blank?
 
         parsed = parse_json_content(content)
+        chore_type = parsed['chore_type'].presence || chore_type
         chore_id = chore_type == 'catalog' ? Integer(parsed.fetch('chore_id')) : nil
         custom_chore_name = chore_type == 'custom' ? parsed['custom_chore_name'].to_s.strip : nil
 
@@ -118,7 +119,9 @@ module Ai
 
           输出要求:
           1) 输出 JSON 对象，字段严格为:
-             - chore_id: Integer，必须来自候选列表中的 id
+             - chore_id: Integer，必须来自候选列表中的 id, 如果用户输入里没有明确家务类型，返回空值(nil)。
+             - custom_chore_name: String，必须返回自定义家务名称，若未匹配上chore_id，则返回此字段，若匹配上chore_id，则返回空值(nil)。
+             - chore_type: String，只能是 "catalog" 或 "custom" chore_id 匹配上时，返回 "catalog"，否则返回 "custom"。
              - points: Number，必须大于 0, 如果输入里没有明确分数，返回空值(nil)。
              - performer_id: Integer，必须来自角色信息中的 id, 如果输入里没有明确参与者，返回空值(nil)。
              - performed_at: Date，推算出家务完成的日期, 如果用户输入里没有明确日期，返回空值(nil)。
