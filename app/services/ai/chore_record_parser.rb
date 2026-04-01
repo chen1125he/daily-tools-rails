@@ -55,47 +55,25 @@ module Ai
         end
       end
 
-      def normalize_catalog(catalog)
-        Array(catalog).filter_map do |item|
-          id = item[:id] || item['id']
-          name = item[:name] || item['name']
-          next if id.blank? || name.blank?
-
-          {
-            id: id.to_i,
-            name: name.to_s,
-            description: (item[:description] || item['description']).to_s,
-            default_points: to_optional_float(item[:default_points] || item['default_points'])
-          }
-        end
-      end
-
-      def to_optional_float(value)
-        return nil if value.blank?
-
-        Float(value)
-      rescue ArgumentError, TypeError
-        nil
-      end
-
       def parse_with_ai
-        prompt = build_prompt
+        if @default_chore_catalog.present?
+          prompt = build_catalog_prompt
+          chore_type = 'catalog'
+        else
+          prompt = build_custom_prompt
+          chore_type = 'custom'
+        end
+
         response = AliyunAi.chat(prompt: prompt, model: @model)
 
         content = response.dig('choices', 0, 'message', 'content').to_s
         raise ParseError, "AI 响应为空: #{response}" if content.blank?
 
         parsed = parse_json_content(content)
-        chore_type = parsed['chore_type'].presence || (parsed['chore_id'].present? ? 'catalog' : 'custom')
-        raise ParseError, "不支持的 chore_type: #{chore_type}" unless ChoreRecord.chore_types.key?(chore_type)
-
         chore_id = chore_type == 'catalog' ? Integer(parsed.fetch('chore_id')) : nil
         custom_chore_name = chore_type == 'custom' ? parsed['custom_chore_name'].to_s.strip : nil
-        raise ParseError, 'custom_chore_name 不能为空' if chore_type == 'custom' && custom_chore_name.blank?
 
-        points = to_optional_decimal(
-          parsed.key?('points') ? parsed['points'] : parsed['contribution_points']
-        )
+        points = to_optional_decimal(parsed['points'])
         performer_id = parsed['performer_id'].present? ? Integer(parsed['performer_id']) : @current_user.id
         performed_at = parsed['performed_at'].present? ? Date.parse(parsed['performed_at']) : nil
         performed_at = performed_at.present? && performed_at.today? ? Time.current : nil
@@ -119,7 +97,7 @@ module Ai
         BigDecimal(value.to_s)
       end
 
-      def build_prompt
+      def build_catalog_prompt
         <<~PROMPT
           你是家务记录解析助手。请从用户输入中识别以下数据
           1. 对应的家务类型和贡献分数。
@@ -140,9 +118,33 @@ module Ai
 
           输出要求:
           1) 输出 JSON 对象，字段严格为:
-             - chore_type: String，只能是 "catalog" 或 "custom" 自定义家务类型为 "custom"，默认类型为 "catalog"。
-             - custom_chore_name: String，仅在 chore_type="custom" 时返回，必须返回自定义家务名称。
-             - chore_id: Integer，仅在 chore_type="catalog" 时返回，必须来自候选列表中的 id
+             - chore_id: Integer，必须来自候选列表中的 id
+             - points: Number，必须大于 0, 如果输入里没有明确分数，返回空值(nil)。
+             - performer_id: Integer，必须来自角色信息中的 id, 如果输入里没有明确参与者，返回空值(nil)。
+             - performed_at: Date，推算出家务完成的日期, 如果用户输入里没有明确日期，返回空值(nil)。
+          2) 不允许新增字段，不允许解释。
+        PROMPT
+      end
+
+      def build_custom_prompt
+        <<~PROMPT
+          你是家务记录解析助手。请从用户输入中识别以下数据
+          1. 对应的家务类型和贡献分数。
+          2. 家务完成的日期。
+          3. 家务完成的参与者。
+          你必须只输出 JSON，不能输出任何额外文本。
+
+          用户输入:
+          #{@normalized_text}
+
+          角色信息(JSON):
+          #{@resolved_user_list.to_json}
+
+          今天是 #{Date.today.strftime('%Y-%m-%d')}。
+
+          输出要求:
+          1) 输出 JSON 对象，字段严格为:
+             - custom_chore_name: String，必须返回自定义家务名称。
              - points: Number，必须大于 0, 如果输入里没有明确分数，返回空值(nil)。
              - performer_id: Integer，必须来自角色信息中的 id, 如果输入里没有明确参与者，返回空值(nil)。
              - performed_at: Date，推算出家务完成的日期, 如果用户输入里没有明确日期，返回空值(nil)。

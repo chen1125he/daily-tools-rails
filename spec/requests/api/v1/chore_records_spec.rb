@@ -23,6 +23,7 @@ RSpec.describe 'Chore Records API', type: :request do
               chore_type: { type: :string, enum: %w[catalog custom] },
               chore_id: { type: :integer },
               custom_chore_name: { type: :string },
+              description: { type: :string },
               points: { type: :number },
               performer_id: { type: :integer },
               performed_at: { type: :string },
@@ -45,7 +46,8 @@ RSpec.describe 'Chore Records API', type: :request do
               performer_id: performer.id,
               points: 2.5,
               performed_at: '2026-03-08T20:00:00Z',
-              source_text: '手动录入'
+              source_text: '手动录入',
+              description: '用了洗碗机'
             }
           }
         end
@@ -55,6 +57,7 @@ RSpec.describe 'Chore Records API', type: :request do
           data = json['data']
           expect(data['chore_type']).to eq('catalog')
           expect(data['chore_id']).to eq(chore.id)
+          expect(data['description']).to eq('用了洗碗机')
           expect(data['chore_name']).to eq('洗碗')
           expect(data['performer_id']).to eq(performer.id)
           expect(data['creator_id']).to eq(user.id)

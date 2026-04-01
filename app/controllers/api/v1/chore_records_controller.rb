@@ -38,6 +38,7 @@ module Api
           chore_type: parse_payload[:chore_type],
           chore_id: parse_payload[:chore_id],
           custom_chore_name: parse_payload[:custom_chore_name],
+          description: params[:text],
           points: parse_payload[:points],
           performer_id: parse_payload[:performer_id],
           performed_at: parse_payload[:performed_at],
@@ -118,7 +119,7 @@ module Api
 
       def manual_create_params
         params.require(:chore_record).permit(
-          :chore_type, :chore_id, :custom_chore_name, :points, :performer_id, :performed_at, :source_text
+          :chore_type, :chore_id, :custom_chore_name, :description, :points, :performer_id, :performed_at, :source_text
         )
       end
 
@@ -131,7 +132,9 @@ module Api
       end
 
       def update_params
-        params.require(:chore_record).permit(:performer_id, :chore_id, :chore_type, :custom_chore_name, :points, :performed_at)
+        params.require(:chore_record).permit(
+          :performer_id, :chore_id, :chore_type, :custom_chore_name, :description, :points, :performed_at
+        )
       end
 
       def render_create_error(result)
@@ -164,6 +167,7 @@ module Api
           chore_type: record.chore_type,
           chore_id: record.chore_id,
           custom_chore_name: record.custom_chore_name,
+          description: record.description,
           chore_name: record.display_chore_name,
           performer_id: record.performer_id,
           performer_name: record.performer.name,
