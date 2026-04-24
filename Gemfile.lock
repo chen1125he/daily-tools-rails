@@ -146,7 +146,7 @@ GEM
       rdoc (>= 4.0.0)
       reline (>= 0.4.2)
     jieba_rb (0.0.5)
-    json (2.19.1)
+    json (2.19.4)
     json-schema (6.2.0)
       addressable (~> 2.8)
       bigdecimal (>= 3.1, < 5)
@@ -206,7 +206,7 @@ GEM
     nokogiri (1.19.1-x86_64-linux-musl)
       racc (~> 1.4)
     ostruct (0.6.3)
-    pagy (43.4.4)
+    pagy (43.5.2)
       json
       uri
       yaml
