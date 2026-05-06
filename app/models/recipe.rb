@@ -3,14 +3,16 @@
 class Recipe < ApplicationRecord
   ROLE_LABELS = {
     'main' => '主料',
-    'side' => '配料',
+    'side' => '辅料',
     'condiment' => '调料'
   }.freeze
 
   belongs_to :user
 
-  has_many :recipe_ingredients, dependent: :destroy
+  has_many :recipe_ingredients, -> { order(:role, :id) }, dependent: :destroy, inverse_of: :recipe
   has_many :ingredients, through: :recipe_ingredients
+
+  accepts_nested_attributes_for :recipe_ingredients, allow_destroy: true
 
   validates :title, presence: true
   validates :prep_minutes, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
