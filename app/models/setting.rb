@@ -13,4 +13,5 @@ class Setting < RailsSettings::Base
   # field :omniauth_google_client_secret, default: (ENV["OMNIAUTH_GOOGLE_CLIENT_SECRET"] || ""), type: :string, readonly: true
 
   field :ai_chore_record_parser_model, default: 'deepseek-v3', type: :string
+  field :ai_recipe_parser_model, default: 'deepseek-v3', type: :string
 end

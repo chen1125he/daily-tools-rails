@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_02_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_07_110000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -47,6 +47,39 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_02_100000) do
     t.datetime "updated_at", null: false
     t.index "lower((name)::text)", name: "index_chores_on_lower_name", unique: true
     t.index ["search_vector"], name: "index_chores_on_search_vector", using: :gin
+  end
+
+  create_table "ingredients", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_ingredients_on_name", unique: true
+  end
+
+  create_table "recipe_ingredients", force: :cascade do |t|
+    t.string "amount", comment: "用量/份"
+    t.datetime "created_at", null: false
+    t.bigint "ingredient_id", null: false
+    t.bigint "recipe_id", null: false
+    t.integer "role", null: false
+    t.datetime "updated_at", null: false
+    t.index ["ingredient_id"], name: "index_recipe_ingredients_on_ingredient_id"
+    t.index ["recipe_id"], name: "index_recipe_ingredients_on_recipe_id"
+  end
+
+  create_table "recipes", force: :cascade do |t|
+    t.jsonb "ai_parse_payload", comment: "AI 解析结果"
+    t.text "cook_description", comment: "烹饪步骤描述"
+    t.integer "cook_minutes", comment: "烹饪时间（分钟）"
+    t.datetime "created_at", null: false
+    t.text "nutrition", comment: "营养成分"
+    t.text "prep_description", comment: "备菜步骤描述"
+    t.integer "prep_minutes", comment: "准备时间（分钟）"
+    t.text "source_text", comment: "原始文本"
+    t.string "title", null: false, comment: "标题"
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["user_id"], name: "index_recipes_on_user_id"
   end
 
   create_table "refresh_tokens", force: :cascade do |t|
@@ -87,5 +120,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_02_100000) do
   add_foreign_key "chore_records", "chores"
   add_foreign_key "chore_records", "users", column: "creator_id"
   add_foreign_key "chore_records", "users", column: "performer_id"
+  add_foreign_key "recipe_ingredients", "ingredients"
+  add_foreign_key "recipe_ingredients", "recipes"
+  add_foreign_key "recipes", "users"
   add_foreign_key "refresh_tokens", "users"
 end

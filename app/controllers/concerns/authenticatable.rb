@@ -24,8 +24,4 @@ module Authenticatable
   def bearer_token
     request.authorization.to_s.split(' ', 2).last
   end
-
-  def render_auth_error(code, message, status: :unauthorized)
-    render json: { error: { code: code, message: message } }, status: status
-  end
 end

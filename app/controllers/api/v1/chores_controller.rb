@@ -55,20 +55,6 @@ module Api
       def cast_boolean(value)
         ActiveModel::Type::Boolean.new.cast(value)
       end
-
-      def render_not_found(code, message)
-        render json: { error: { code: code, message: message } }, status: :not_found
-      end
-
-      def render_validation_error(record)
-        render json: {
-          error: {
-            code: 'VALIDATION_FAILED',
-            message: record.errors.full_messages.to_sentence,
-            details: record.errors.to_hash
-          }
-        }, status: :unprocessable_content
-      end
     end
   end
 end

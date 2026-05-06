@@ -53,7 +53,7 @@ module Api
         end
 
         unless current_user.update(password_params.slice(:password, :password_confirmation))
-          return render_validation_error(current_user)
+          return render_validation_error(current_user, code: 'AUTH_PASSWORD_WEAK', include_details: false)
         end
 
         current_user.refresh_tokens.active.find_each(&:revoke!)
@@ -81,15 +81,6 @@ module Api
       def render_auth_result_error(result)
         status = result.error_code == 'AUTH_USER_DISABLED' ? :forbidden : :unauthorized
         render_auth_error(result.error_code, result.error_message, status: status)
-      end
-
-      def render_validation_error(record)
-        render json: {
-          error: {
-            code: 'AUTH_PASSWORD_WEAK',
-            message: record.errors.full_messages.to_sentence
-          }
-        }, status: :unprocessable_content
       end
     end
   end

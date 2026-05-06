@@ -137,30 +137,6 @@ module Api
         )
       end
 
-      def render_create_error(result)
-        render json: {
-          error: {
-            code: result.error_code,
-            message: result.error_message,
-            details: result.errors
-          }
-        }, status: :unprocessable_content
-      end
-
-      def render_not_found(code, message)
-        render json: { error: { code: code, message: message } }, status: :not_found
-      end
-
-      def render_validation_error(record)
-        render json: {
-          error: {
-            code: 'VALIDATION_FAILED',
-            message: record.errors.full_messages.to_sentence,
-            details: record.errors.to_hash
-          }
-        }, status: :unprocessable_content
-      end
-
       def record_payload(record)
         {
           id: record.id,
