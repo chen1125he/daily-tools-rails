@@ -42,7 +42,7 @@ module Api
       end
 
       def ingredient_params
-        params.require(:ingredient).permit(:name)
+        params.require(:ingredient).permit(:name, :search_keywords)
       end
 
       def render_in_use_error

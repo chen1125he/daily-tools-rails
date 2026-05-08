@@ -96,7 +96,7 @@ module Ai
             name = raw_name.to_s.strip
             next if name.blank?
 
-            ingredient = Ingredient.find_or_create_by!(name: name)
+            ingredient = Ingredient.find_matching_label(name) || Ingredient.find_or_create_by!(name: name)
             recipe.recipe_ingredients.find_or_create_by!(ingredient: ingredient, role: role)
           end
         end
