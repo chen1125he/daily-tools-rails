@@ -76,11 +76,13 @@ module Ai
              - prep_description: text，备菜步骤（处理食材），用markdown简单整理一下格式。
              - cook_description: text，烹饪步骤，用markdown简单整理一下格式。
              - ingredients: Object，包含 3 个字段:
-               - main: String[]，主料名称列表。
-               - side: String[]，配料名称列表。
-               - condiment: String[]，调料名称列表。
-          2) ingredients 下每个列表只保留食材名称，不要包含数量、单位、做法。
-          3) 不允许新增字段，不允许解释。
+               - main: Object[]，主料列表。
+               - side: Object[]，配料列表。
+               - condiment: Object[]，调料列表。
+               每个元素为 Object，且严格只有两键:
+               - name: String，仅食材名称，不含数量、单位、做法（如「盐」「五花肉」）。
+               - amount: String，该食材在本菜谱中的用量原文，保留数字与单位/器皿说法（如「一勺」「100克」「适量」）；笔记未写则返回空字符串。
+          2) 不允许新增字段，不允许解释。
         PROMPT
       end
 
@@ -91,13 +93,16 @@ module Ai
       end
 
       def create_recipe_ingredients!(recipe, ingredients)
-        ingredients.each do |role, names|
-          names.each do |raw_name|
-            name = raw_name.to_s.strip
+        ingredients.each do |role, entries|
+          entries.each do |entry|
+            name = entry.fetch(:name).to_s.strip
             next if name.blank?
 
+            amount = entry[:amount]
             ingredient = Ingredient.find_matching_label(name) || Ingredient.find_or_create_by!(name: name)
-            recipe.recipe_ingredients.find_or_create_by!(ingredient: ingredient, role: role)
+            record = recipe.recipe_ingredients.find_or_initialize_by(ingredient: ingredient, role: role)
+            record.amount = amount
+            record.save!
           end
         end
       end
@@ -117,18 +122,36 @@ module Ai
         Integer(text)
       end
 
-      def to_clean_array(value)
-        Array(value).map { |item| item.to_s.strip }.reject(&:blank?)
-      end
-
       def normalize_ingredients(ingredients)
         source = ingredients.is_a?(Hash) ? ingredients : {}
 
         {
-          main: to_clean_array(source['main'] || source[:main]),
-          side: to_clean_array(source['side'] || source[:side]),
-          condiment: to_clean_array(source['condiment'] || source[:condiment])
+          main: normalize_ingredient_entries(source['main'] || source[:main]),
+          side: normalize_ingredient_entries(source['side'] || source[:side]),
+          condiment: normalize_ingredient_entries(source['condiment'] || source[:condiment])
         }
+      end
+
+      def normalize_ingredient_entries(value)
+        Array(value).filter_map do |item|
+          name, amount = normalize_ingredient_entry(item)
+          next if name.blank?
+
+          { name: name, amount: amount }
+        end
+      end
+
+      def normalize_ingredient_entry(item)
+        case item
+        when Hash
+          name = (item['name'] || item[:name]).to_s.strip
+          raw_amount = item['amount'] || item[:amount]
+          amount = raw_amount.nil? ? nil : raw_amount.to_s.strip.presence
+        else
+          name = item.to_s.strip
+          amount = nil
+        end
+        [name, amount]
       end
 
       def parse_json_content(content)
