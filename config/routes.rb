@@ -25,7 +25,9 @@ Rails.application.routes.draw do
           post 'parse_from_text', on: :collection
         end
         resources :ingredients, only: %i[index show create update destroy]
-        resources :recipes, only: %i[index show create update destroy]
+        resources :recipes, only: %i[index show create update destroy] do
+          post 'parse_from_text', on: :collection
+        end
       end
     end
   end

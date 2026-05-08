@@ -5,6 +5,19 @@ module Api
     class RecipesController < ApplicationController
       before_action :set_recipe, only: %i[show update destroy]
 
+      def parse_from_text
+        text = params.require(:text)
+        result = Ai::RecipeParser.call(text: text, current_user: current_user)
+        @recipe = reload_recipe_for_render(result[:recipe].id)
+        render :show, status: :created
+      rescue ActiveRecord::RecordInvalid => e
+        render_validation_error(e.record)
+      rescue Ai::RecipeParser::ParseError => e
+        render json: { error: { code: 'RECIPE_PARSE_FAILED', message: e.message } }, status: :unprocessable_entity
+      rescue ActionController::ParameterMissing => e
+        render json: { error: { code: 'INVALID_PARAMS', message: e.message } }, status: :bad_request
+      end
+
       def index
         scope = current_user.recipes.includes(recipe_ingredients: :ingredient).order(updated_at: :desc)
         @pagy, @recipes = pagy(scope)
@@ -52,28 +65,17 @@ module Api
       RECIPE_INGREDIENTS_NESTED_KEYS = %i[id ingredient_id role amount _destroy].freeze
 
       def recipe_params
-        root = params.require(:recipe)
-        permitted_scalar = root.permit(
+        # 必须一次 permit 到位：若先只 permit 标量，请求里的 recipe_ingredients_attributes 会被记成 Unpermitted parameter（日志噪音且易误判）。
+        params.require(:recipe).permit(
           :title,
           :prep_description,
           :cook_description,
           :prep_minutes,
           :cook_minutes,
           :nutrition,
-          :source_text
+          :source_text,
+          recipe_ingredients_attributes: RECIPE_INGREDIENTS_NESTED_KEYS
         )
-
-        nested =
-          if root.key?(:recipe_ingredients_attributes) || root.key?('recipe_ingredients_attributes')
-            root.permit(recipe_ingredients_attributes: RECIPE_INGREDIENTS_NESTED_KEYS)[:recipe_ingredients_attributes]
-          elsif root.key?(:recipe_ingredients) || root.key?('recipe_ingredients')
-            # 兼容旧字段名（语义与 recipe_ingredients_attributes 相同）
-            root.permit(recipe_ingredients: RECIPE_INGREDIENTS_NESTED_KEYS)[:recipe_ingredients]
-          end
-
-        return permitted_scalar if nested.nil?
-
-        permitted_scalar.merge(recipe_ingredients_attributes: nested)
       end
     end
   end
