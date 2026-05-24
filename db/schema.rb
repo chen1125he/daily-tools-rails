@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_08_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_24_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -55,6 +55,26 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_08_120000) do
     t.text "search_keywords", comment: "别名/检索词，空格或中英文逗号分隔，与 name 一起用于匹配是否已有该食材"
     t.datetime "updated_at", null: false
     t.index ["name"], name: "index_ingredients_on_name", unique: true
+  end
+
+  create_table "menu_recipes", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "menu_id", null: false
+    t.bigint "recipe_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["menu_id", "recipe_id"], name: "index_menu_recipes_on_menu_id_and_recipe_id", unique: true
+    t.index ["menu_id"], name: "index_menu_recipes_on_menu_id"
+    t.index ["recipe_id"], name: "index_menu_recipes_on_recipe_id"
+  end
+
+  create_table "menus", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "meal_type", null: false, comment: "餐次：0 早餐 / 1 午餐 / 2 晚餐"
+    t.date "menu_date", null: false, comment: "菜单日期"
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["menu_date", "meal_type"], name: "index_menus_on_menu_date_and_meal_type"
+    t.index ["user_id"], name: "index_menus_on_user_id"
   end
 
   create_table "recipe_ingredients", force: :cascade do |t|
@@ -121,6 +141,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_08_120000) do
   add_foreign_key "chore_records", "chores"
   add_foreign_key "chore_records", "users", column: "creator_id"
   add_foreign_key "chore_records", "users", column: "performer_id"
+  add_foreign_key "menu_recipes", "menus"
+  add_foreign_key "menu_recipes", "recipes"
+  add_foreign_key "menus", "users"
   add_foreign_key "recipe_ingredients", "ingredients"
   add_foreign_key "recipe_ingredients", "recipes"
   add_foreign_key "recipes", "users"
