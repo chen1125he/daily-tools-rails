@@ -151,7 +151,7 @@ module Ai
           name = item.to_s.strip
           amount = nil
         end
-        [name, amount]
+        [ name, amount ]
       end
 
       def parse_json_content(content)

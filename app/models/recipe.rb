@@ -20,24 +20,22 @@ class Recipe < ApplicationRecord
 
   def full_recipe_text
     lines = []
-    lines << "# #{title}"
-    lines << ''
-    lines << '## 食材'
+    lines << '# 食材'
     lines << ''
     lines << render_ingredient_line('main')
     lines << render_ingredient_line('side')
     lines << render_ingredient_line('condiment')
     lines << ''
-    lines << '## 时长'
+    lines << '# 时长'
     lines << ''
     lines << "- 备菜时长: #{prep_minutes.present? ? "#{prep_minutes} 分钟" : '未知'}"
     lines << "- 烹饪时长: #{cook_minutes.present? ? "#{cook_minutes} 分钟" : '未知'}"
     lines << ''
-    lines << '## 备菜步骤'
+    lines << '# 备菜步骤'
     lines << ''
     lines << (prep_description.presence || '暂无')
     lines << ''
-    lines << '## 烹饪步骤'
+    lines << '# 烹饪步骤'
     lines << ''
     lines << (cook_description.presence || '暂无')
     lines << ''
