@@ -20,6 +20,9 @@ module Api
 
       def index
         scope = current_user.recipes.includes(recipe_ingredients: :ingredient).order(updated_at: :desc)
+        if params[:q].present?
+          scope = scope.where('title ILIKE ?', "%#{ActiveRecord::Base.sanitize_sql_like(params[:q].strip)}%")
+        end
         @pagy, @recipes = pagy(scope)
       end
 
