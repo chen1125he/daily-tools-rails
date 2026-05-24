@@ -35,8 +35,8 @@ module Ai
           raise ParseError, 'start_date 格式不正确，请使用 YYYY-MM-DD'
         end
 
-        @recipes = current_user.recipes.includes(recipe_ingredients: :ingredient).order(:id).to_a
-        raise ParseError, '请先添加至少 1 道食谱' if @recipes.empty?
+        @recipes = current_user.recipes.where(in_ai_plan: true).includes(recipe_ingredients: :ingredient).order(:id).to_a
+        raise ParseError, '请先添加至少 1 道可用于 AI 规划的食谱' if @recipes.empty?
 
         @recipe_ids = @recipes.map(&:id)
         @recent_menus = current_user.menus

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_24_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_24_150000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -106,6 +106,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_24_140000) do
     t.text "cook_description", comment: "烹饪步骤描述"
     t.integer "cook_minutes", comment: "烹饪时间（分钟）"
     t.datetime "created_at", null: false
+    t.boolean "in_ai_plan", default: true, null: false, comment: "AI 规划菜单时是否使用此菜谱"
     t.text "nutrition", comment: "营养成分"
     t.text "prep_description", comment: "备菜步骤描述"
     t.integer "prep_minutes", comment: "准备时间（分钟）"

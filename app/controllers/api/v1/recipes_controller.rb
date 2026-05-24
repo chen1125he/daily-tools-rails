@@ -40,6 +40,7 @@ module Api
       end
 
       def update
+        pp recipe_params
         raise ActiveRecord::RecordInvalid, @recipe unless @recipe.update(recipe_params)
 
         @recipe = reload_recipe_for_render(@recipe.id)
@@ -77,6 +78,7 @@ module Api
           :cook_minutes,
           :nutrition,
           :source_text,
+          :in_ai_plan,
           recipe_ingredients_attributes: RECIPE_INGREDIENTS_NESTED_KEYS
         )
       end
