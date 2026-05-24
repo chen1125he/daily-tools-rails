@@ -38,6 +38,19 @@ module Api
         render :show
       end
 
+      def generate
+        Ai::MenuPlanner.call(
+          current_user: current_user,
+          days: params[:days],
+          start_date: Date.today
+        )
+        render_api_success(nil, status: :created)
+      rescue Ai::MenuPlanner::ParseError => e
+        render json: { error: { code: 'MENU_PLAN_FAILED', message: e.message } }, status: :unprocessable_entity
+      rescue ActionController::ParameterMissing => e
+        render json: { error: { code: 'INVALID_PARAMS', message: e.message } }, status: :bad_request
+      end
+
       private
 
       def set_menu

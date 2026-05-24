@@ -14,4 +14,5 @@ class Setting < RailsSettings::Base
 
   field :ai_chore_record_parser_model, default: 'deepseek-v3', type: :string
   field :ai_recipe_parser_model, default: 'deepseek-v3', type: :string
+  field :ai_menu_planner_model, default: 'deepseek-v3', type: :string
 end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_24_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_24_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -57,6 +57,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_24_120000) do
     t.index ["name"], name: "index_ingredients_on_name", unique: true
   end
 
+  create_table "menu_plans", force: :cascade do |t|
+    t.jsonb "ai_parse_payload", comment: "AI 生成结果"
+    t.datetime "created_at", null: false
+    t.integer "days", null: false, comment: "规划天数"
+    t.date "start_date", null: false, comment: "起始日期"
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["user_id"], name: "index_menu_plans_on_user_id"
+  end
+
   create_table "menu_recipes", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.bigint "menu_id", null: false
@@ -71,9 +81,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_24_120000) do
     t.datetime "created_at", null: false
     t.integer "meal_type", null: false, comment: "餐次：0 早餐 / 1 午餐 / 2 晚餐"
     t.date "menu_date", null: false, comment: "菜单日期"
+    t.bigint "menu_plan_id"
+    t.text "rationale", comment: "本餐搭配与营养考虑"
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
     t.index ["menu_date", "meal_type"], name: "index_menus_on_menu_date_and_meal_type"
+    t.index ["menu_plan_id"], name: "index_menus_on_menu_plan_id"
     t.index ["user_id"], name: "index_menus_on_user_id"
   end
 
@@ -141,6 +154,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_24_120000) do
   add_foreign_key "chore_records", "chores"
   add_foreign_key "chore_records", "users", column: "creator_id"
   add_foreign_key "chore_records", "users", column: "performer_id"
+  add_foreign_key "menu_plans", "users"
   add_foreign_key "menu_recipes", "menus"
   add_foreign_key "menu_recipes", "recipes"
   add_foreign_key "menus", "users"

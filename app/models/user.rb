@@ -8,6 +8,7 @@ class User < ApplicationRecord
   has_many :created_chore_records, class_name: 'ChoreRecord', foreign_key: :creator_id, inverse_of: :creator, dependent: :restrict_with_exception
   has_many :recipes, dependent: :destroy
   has_many :menus, dependent: :destroy
+  has_many :menu_plans, dependent: :destroy
 
   validates :phone, presence: true, uniqueness: true
   validates :password, length: { minimum: 8 }, if: -> { password.present? }
