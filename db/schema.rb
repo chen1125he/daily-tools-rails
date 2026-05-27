@@ -10,36 +10,158 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_03_11_000200) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_27_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
-  create_table "refresh_tokens", force: :cascade do |t|
-    t.bigint "user_id", null: false
-    t.string "token_digest", null: false
-    t.datetime "expires_at", null: false
-    t.datetime "revoked_at"
-    t.string "device_info"
-    t.string "ip"
+  create_table "chore_records", force: :cascade do |t|
+    t.jsonb "ai_parse_payload"
+    t.bigint "chore_id"
+    t.string "chore_type", default: "catalog", null: false
     t.datetime "created_at", null: false
+    t.bigint "creator_id", null: false
+    t.string "custom_chore_name"
+    t.text "description"
+    t.datetime "performed_at", null: false
+    t.bigint "performer_id", null: false
+    t.decimal "points", precision: 5, scale: 2, null: false
+    t.datetime "removed_at"
+    t.text "source_text"
     t.datetime "updated_at", null: false
+    t.index ["chore_id"], name: "index_chore_records_on_chore_id"
+    t.index ["creator_id"], name: "index_chore_records_on_creator_id"
+    t.index ["performed_at"], name: "index_chore_records_on_performed_at"
+    t.index ["performer_id", "performed_at"], name: "index_chore_records_on_performer_id_and_performed_at"
+    t.index ["performer_id"], name: "index_chore_records_on_performer_id"
+  end
+
+  create_table "chores", force: :cascade do |t|
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.decimal "default_points", precision: 5, scale: 2, default: "1.0", comment: "默认贡献积分"
+    t.text "description", comment: "家务描述"
+    t.string "name", null: false
+    t.text "search_keywords"
+    t.text "search_tokens"
+    t.tsvector "search_vector"
+    t.datetime "updated_at", null: false
+    t.index "lower((name)::text)", name: "index_chores_on_lower_name", unique: true
+    t.index ["search_vector"], name: "index_chores_on_search_vector", using: :gin
+  end
+
+  create_table "ingredients", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.text "search_keywords", comment: "别名/检索词，空格或中英文逗号分隔，与 name 一起用于匹配是否已有该食材"
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_ingredients_on_name", unique: true
+  end
+
+  create_table "menu_plans", force: :cascade do |t|
+    t.jsonb "ai_parse_payload", comment: "AI 生成结果"
+    t.datetime "created_at", null: false
+    t.text "custom_prompt", comment: "用户自定义生成要求"
+    t.integer "days", null: false, comment: "规划天数"
+    t.date "start_date", null: false, comment: "起始日期"
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["user_id"], name: "index_menu_plans_on_user_id"
+  end
+
+  create_table "menu_recipes", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "menu_id", null: false
+    t.bigint "recipe_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["menu_id", "recipe_id"], name: "index_menu_recipes_on_menu_id_and_recipe_id", unique: true
+    t.index ["menu_id"], name: "index_menu_recipes_on_menu_id"
+    t.index ["recipe_id"], name: "index_menu_recipes_on_recipe_id"
+  end
+
+  create_table "menus", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "meal_type", null: false, comment: "餐次：0 早餐 / 1 午餐 / 2 晚餐"
+    t.date "menu_date", null: false, comment: "菜单日期"
+    t.bigint "menu_plan_id"
+    t.text "rationale", comment: "本餐搭配与营养考虑"
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["menu_date", "meal_type"], name: "index_menus_on_menu_date_and_meal_type"
+    t.index ["menu_plan_id"], name: "index_menus_on_menu_plan_id"
+    t.index ["user_id"], name: "index_menus_on_user_id"
+  end
+
+  create_table "recipe_ingredients", force: :cascade do |t|
+    t.string "amount", comment: "用量/份"
+    t.datetime "created_at", null: false
+    t.bigint "ingredient_id", null: false
+    t.bigint "recipe_id", null: false
+    t.integer "role", null: false
+    t.datetime "updated_at", null: false
+    t.index ["ingredient_id"], name: "index_recipe_ingredients_on_ingredient_id"
+    t.index ["recipe_id"], name: "index_recipe_ingredients_on_recipe_id"
+  end
+
+  create_table "recipes", force: :cascade do |t|
+    t.jsonb "ai_parse_payload", comment: "AI 解析结果"
+    t.text "cook_description", comment: "烹饪步骤描述"
+    t.integer "cook_minutes", comment: "烹饪时间（分钟）"
+    t.datetime "created_at", null: false
+    t.boolean "in_ai_plan", default: true, null: false, comment: "AI 规划菜单时是否使用此菜谱"
+    t.text "nutrition", comment: "营养成分"
+    t.text "prep_description", comment: "备菜步骤描述"
+    t.integer "prep_minutes", comment: "准备时间（分钟）"
+    t.text "source_text", comment: "原始文本"
+    t.string "title", null: false, comment: "标题"
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["user_id"], name: "index_recipes_on_user_id"
+  end
+
+  create_table "refresh_tokens", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "device_info"
+    t.datetime "expires_at", null: false
+    t.string "ip"
+    t.datetime "revoked_at"
+    t.string "token_digest", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
     t.index ["expires_at"], name: "index_refresh_tokens_on_expires_at"
     t.index ["token_digest"], name: "index_refresh_tokens_on_token_digest", unique: true
     t.index ["user_id"], name: "index_refresh_tokens_on_user_id"
   end
 
+  create_table "settings", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.text "value"
+    t.string "var", null: false
+    t.index ["var"], name: "index_settings_on_var", unique: true
+  end
+
   create_table "users", force: :cascade do |t|
-    t.string "phone", null: false
-    t.string "password_digest", null: false
-    t.string "name"
-    t.string "status", default: "active", null: false
+    t.datetime "created_at", null: false
     t.datetime "last_sign_in_at"
     t.string "last_sign_in_ip"
-    t.datetime "created_at", null: false
+    t.string "name"
+    t.string "password_digest", null: false
+    t.string "phone", null: false
+    t.string "status", default: "active", null: false
     t.datetime "updated_at", null: false
     t.index ["phone"], name: "index_users_on_phone", unique: true
     t.index ["status"], name: "index_users_on_status"
   end
 
+  add_foreign_key "chore_records", "chores"
+  add_foreign_key "chore_records", "users", column: "creator_id"
+  add_foreign_key "chore_records", "users", column: "performer_id"
+  add_foreign_key "menu_plans", "users"
+  add_foreign_key "menu_recipes", "menus"
+  add_foreign_key "menu_recipes", "recipes"
+  add_foreign_key "menus", "users"
+  add_foreign_key "recipe_ingredients", "ingredients"
+  add_foreign_key "recipe_ingredients", "recipes"
+  add_foreign_key "recipes", "users"
   add_foreign_key "refresh_tokens", "users"
 end

@@ -66,7 +66,7 @@ RSpec.describe "Auth API", type: :request do
 
       parameter name: :payload, in: :body, schema: {
         type: :object,
-        required: ["refresh_token"],
+        required: [ "refresh_token" ],
         properties: {
           refresh_token: { type: :string }
         }
@@ -118,7 +118,7 @@ RSpec.describe "Auth API", type: :request do
     get "Get current user profile" do
       tags "Auth"
       produces "application/json"
-      security [{ bearerAuth: [] }]
+      security [ { bearerAuth: [] } ]
       parameter name: :Authorization, in: :header, schema: { type: :string }
 
       response "200", "ok" do
@@ -127,6 +127,7 @@ RSpec.describe "Auth API", type: :request do
 
         run_test! do |response|
           expect(response.parsed_body).to eq(
+            "code" => 0,
             "data" => {
               "id" => user.id,
               "phone" => user.phone,
@@ -155,11 +156,11 @@ RSpec.describe "Auth API", type: :request do
     delete "Sign out" do
       tags "Auth"
       consumes "application/json"
-      security [{ bearerAuth: [] }]
+      security [ { bearerAuth: [] } ]
       parameter name: :Authorization, in: :header, schema: { type: :string }
       parameter name: :payload, in: :body, schema: {
         type: :object,
-        required: ["refresh_token"],
+        required: [ "refresh_token" ],
         properties: {
           refresh_token: { type: :string }
         }
@@ -183,7 +184,7 @@ RSpec.describe "Auth API", type: :request do
     patch "Update password" do
       tags "Auth"
       consumes "application/json"
-      security [{ bearerAuth: [] }]
+      security [ { bearerAuth: [] } ]
       parameter name: :Authorization, in: :header, schema: { type: :string }
       parameter name: :payload, in: :body, schema: {
         type: :object,

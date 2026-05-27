@@ -1,0 +1,60 @@
+# frozen_string_literal: true
+
+module Api
+  module V1
+    class ChoresController < ApplicationController
+      before_action :set_chore, only: %i[show update]
+
+      def index
+        chores = Chore.order(id: :desc)
+        chores = chores.where(active: cast_boolean(params[:active])) if params.key?(:active)
+
+        render_api_success(chores.map { |chore| chore_payload(chore) })
+      end
+
+      def create
+        chore = Chore.new(chore_params)
+        return render_validation_error(chore) unless chore.save
+
+        render_api_success(chore_payload(chore), status: :created)
+      end
+
+      def show
+        render_api_success(chore_payload(@chore))
+      end
+
+      def update
+        return render_validation_error(@chore) unless @chore.update(chore_params)
+
+        render_api_success(chore_payload(@chore))
+      end
+
+      private
+
+      def set_chore
+        @chore = Chore.find(params[:id])
+      rescue ActiveRecord::RecordNotFound
+        render_not_found('CHORE_NOT_FOUND', '家务类型不存在')
+      end
+
+      def chore_params
+        params.require(:chore).permit(:name, :active, :description, :search_keywords, :default_points)
+      end
+
+      def chore_payload(chore)
+        {
+          id: chore.id,
+          name: chore.name,
+          active: chore.active,
+          description: chore.description,
+          search_keywords: chore.search_keywords,
+          default_points: chore.default_points&.to_f
+        }
+      end
+
+      def cast_boolean(value)
+        ActiveModel::Type::Boolean.new.cast(value)
+      end
+    end
+  end
+end

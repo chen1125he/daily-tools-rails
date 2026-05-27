@@ -30,16 +30,16 @@ module Auth
       def invalid_credentials
         Result.new(
           success?: false,
-          error_code: "AUTH_INVALID_CREDENTIALS",
-          error_message: "手机号或密码错误"
+          error_code: 'AUTH_INVALID_CREDENTIALS',
+          error_message: '手机号或密码错误'
         )
       end
 
       def user_disabled
         Result.new(
           success?: false,
-          error_code: "AUTH_USER_DISABLED",
-          error_message: "用户已被禁用"
+          error_code: 'AUTH_USER_DISABLED',
+          error_message: '用户已被禁用'
         )
       end
     end
