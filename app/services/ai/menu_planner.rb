@@ -56,57 +56,67 @@ module Ai
 
       def plan_with_ai
         end_date = @start_date + (@days - 1)
+        repeat_constraint = <<~TEXT.strip
+          #{AVOID_REPEAT_WITHIN_DAYS} 天去重：同一 recipe_id 若在日期 D 的任一餐（午餐或晚餐）出现，则日期 D+1、D+2 的所有餐次均不得再出现该 id（与近期菜单合并计算）。
+          示例：近期菜单中 2026-05-20 午餐含 recipe_id=3，则 2026-05-21、2026-05-22 不可再选 3，2026-05-23 起可以。
+        TEXT
         recipe_catalog = @recipes.map do |recipe|
           main_ingredients = recipe.main_ingredients.map(&:name).join(', ')
-          "id: #{recipe.id}，『#{recipe.title}』主要食材：#{main_ingredients}"
-        end
-
-        recent_menus = @recent_menus.map do |menu|
-          "id: #{menu.id}，#{menu.menu_date.iso8601} #{menu.meal_type_label}：#{menu.recipes.map(&:title).join(', ')}"
+          "- recipe_id=#{recipe.id}，#{recipe.title}，主料：#{main_ingredients}"
+        end.join("\n")
+        recent_menus = if @recent_menus.empty?
+          '（无）'
+        else
+          @recent_menus.map do |menu|
+            dishes = menu.recipes.map { |recipe| "recipe_id=#{recipe.id}(#{recipe.title})" }.join(', ')
+            "- #{menu.menu_date.iso8601} #{menu.meal_type}: #{dishes}"
+          end.join("\n")
         end
 
         prompt = <<~PROMPT
-          你是家庭菜单规划助手。请根据用户的食谱库和最近菜单，生成未来 #{@days} 天的餐次菜单。
-          你必须只输出 JSON，不能输出任何额外文本。
+          你是家庭菜单规划助手。根据食谱库与近期菜单，生成 #{@start_date.iso8601} 至 #{end_date.iso8601} 的餐次菜单。
+          只输出 JSON，不要输出任何其它文字。
 
-          规划日期: #{@start_date.iso8601} 至 #{end_date.iso8601}
-          需要规划的餐次: lunch, dinner
+          ## 规划范围
+          - 日期: #{@start_date.iso8601} 起连续 #{@days} 天
+          - 餐次: 每天仅 lunch（2 道菜）、dinner（3 道菜）
 
-          约束:
-          - lunch 安排 2 道菜，dinner 安排 3 道菜
-          - #{AVOID_REPEAT_WITHIN_DAYS} 天内尽量不重复同一道菜
-          - 只能从食谱库中选择 recipe_id，不能编造
-          - 考虑营养平衡：每天尽量覆盖蛋白质、蔬菜、主食；避免连续多天重油重肉
-          - 参考最近菜单，避免简单复制，适当换花样
+          ## 硬性约束（必须全部满足，优先级最高）
+          1) recipe_id 只能来自下方食谱库，禁止编造。
+          2) #{repeat_constraint}
+          3) 同一餐内 recipe_ids 不可重复；lunch 恰好 2 个 id，dinner 恰好 3 个 id。
 
-          食谱库(JSON):
-          #{recipe_catalog.join("\n")}
+          ## 软性偏好（在去重等硬性约束满足后再考虑）
+          - 每天尽量覆盖蛋白质、蔬菜
+          - 避免连续多天重油重肉
+          - 在合规前提下适当换花样，勿整段复制近期菜单
 
-          最近 #{RECENT_MENU_DAYS} 天菜单(JSON):
-          #{recent_menus.join("\n")}
+          ## 食谱库（仅可选用下列 recipe_id）
+          #{recipe_catalog}
+
+          ## 近期菜单（#{@start_date.iso8601} 之前 #{RECENT_MENU_DAYS} 天，去重计算须合并计入）
+          #{recent_menus}
         PROMPT
 
         if @custom_prompt.present?
           prompt << <<~PROMPT
 
-          用户额外要求（在满足上述约束的前提下尽量满足）:
+          ## 用户额外要求
+          在满足上述硬性约束的前提下尽量满足：
           #{@custom_prompt}
           PROMPT
         end
 
         prompt << <<~PROMPT
 
-          输出要求:
-          1) 输出 JSON 对象，字段严格为:
-             - days: Object[]，长度必须为 #{@days}，按日期升序。
-               每个元素为:
-               - date: String，ISO8601 日期 YYYY-MM-DD，从 #{@start_date.iso8601} 起连续 #{@days} 天。
-               - meals: Object[]，仅包含 lunch 和 dinner。
-                 每个元素为:
-                 - meal_type: String，只能是 "lunch" | "dinner"。
-                 - recipe_ids: Integer[]，来自食谱库，lunch 必须 2 个，dinner 必须 3 个，同一餐内不可重复。
-                 - rationale: String，简短说明本餐搭配与营养考虑（1 句话）。
-          2) 不允许新增字段，不允许解释。
+          ## 输出 JSON 格式
+          根对象字段:
+          - days: 数组，长度 #{@days}，按 date 升序；date 从 #{@start_date.iso8601} 起连续 #{@days} 天（YYYY-MM-DD）。
+            每天 meals 仅含 lunch、dinner 各一条：
+            - meal_type: "lunch" | "dinner"
+            - recipe_ids: 整数数组（食谱库 id）；须同时满足「每餐道菜数」与「#{AVOID_REPEAT_WITHIN_DAYS} 天去重」规则
+            - rationale: 一句话说明搭配理由
+          禁止额外字段与解释性文字。
         PROMPT
 
         response = AliyunAi.chat(prompt: prompt, model: @model)
