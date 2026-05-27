@@ -11,6 +11,8 @@ class Recipe < ApplicationRecord
 
   has_many :recipe_ingredients, -> { order(:role, :id) }, dependent: :destroy, inverse_of: :recipe
   has_many :ingredients, through: :recipe_ingredients
+  has_many :main_recipe_ingredients, -> { where(role: :main).order(:id) }, class_name: 'RecipeIngredient'
+  has_many :main_ingredients, through: :main_recipe_ingredients, source: :ingredient
   has_many :menu_recipes, dependent: :destroy
   has_many :menus, through: :menu_recipes
 

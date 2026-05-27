@@ -11,7 +11,7 @@ module Ai
     MAX_DAYS = 14
 
     class << self
-      def call(current_user:, days:, start_date: nil)
+      def call(current_user:, days:, start_date: nil, custom_prompt: nil)
         @current_user = current_user
         @model = Setting.ai_menu_planner_model
 
@@ -35,6 +35,8 @@ module Ai
           raise ParseError, 'start_date 格式不正确，请使用 YYYY-MM-DD'
         end
 
+        @custom_prompt = custom_prompt.to_s.strip.presence
+
         @recipes = current_user.recipes.where(in_ai_plan: true).includes(recipe_ingredients: :ingredient).order(:id).to_a
         raise ParseError, '请先添加至少 1 道可用于 AI 规划的食谱' if @recipes.empty?
 
@@ -55,22 +57,12 @@ module Ai
       def plan_with_ai
         end_date = @start_date + (@days - 1)
         recipe_catalog = @recipes.map do |recipe|
-          {
-            id: recipe.id,
-            title: recipe.title,
-            main_ingredients: recipe.recipe_ingredients.select(&:main?).filter_map { |r| r.ingredient&.name.to_s.strip.presence },
-            side_ingredients: recipe.recipe_ingredients.select(&:side?).filter_map { |r| r.ingredient&.name.to_s.strip.presence },
-            total_minutes: [ recipe.prep_minutes, recipe.cook_minutes ].compact.sum,
-            nutrition: recipe.nutrition.presence
-          }
+          main_ingredients = recipe.main_ingredients.map(&:name).join(', ')
+          "id: #{recipe.id}，『#{recipe.title}』主要食材：#{main_ingredients}"
         end
+
         recent_menus = @recent_menus.map do |menu|
-          {
-            date: menu.menu_date.iso8601,
-            meal_type: menu.meal_type,
-            recipe_ids: menu.menu_recipes.map(&:recipe_id),
-            titles: menu.recipes.map(&:title)
-          }
+          "id: #{menu.id}，#{menu.menu_date.iso8601} #{menu.meal_type_label}：#{menu.recipes.map(&:title).join(', ')}"
         end
 
         prompt = <<~PROMPT
@@ -88,10 +80,21 @@ module Ai
           - 参考最近菜单，避免简单复制，适当换花样
 
           食谱库(JSON):
-          #{recipe_catalog.to_json}
+          #{recipe_catalog.join("\n")}
 
           最近 #{RECENT_MENU_DAYS} 天菜单(JSON):
-          #{recent_menus.to_json}
+          #{recent_menus.join("\n")}
+        PROMPT
+
+        if @custom_prompt.present?
+          prompt << <<~PROMPT
+
+          用户额外要求（在满足上述约束的前提下尽量满足）:
+          #{@custom_prompt}
+          PROMPT
+        end
+
+        prompt << <<~PROMPT
 
           输出要求:
           1) 输出 JSON 对象，字段严格为:
@@ -182,6 +185,7 @@ module Ai
           menu_plan = @current_user.menu_plans.create!(
             days: @days,
             start_date: @start_date,
+            custom_prompt: @custom_prompt,
             ai_parse_payload: ai_parse_payload
           )
 

@@ -12,4 +12,15 @@ class Menu < ApplicationRecord
 
   validates :menu_date, presence: true
   validates :meal_type, presence: true
+
+  def meal_type_label
+    case meal_type
+    when 'breakfast'
+      '早餐'
+    when 'lunch'
+      '午餐'
+    when 'dinner'
+      '晚餐'
+    end
+  end
 end

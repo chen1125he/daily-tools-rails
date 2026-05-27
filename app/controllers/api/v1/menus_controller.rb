@@ -42,7 +42,8 @@ module Api
         Ai::MenuPlanner.call(
           current_user: current_user,
           days: params[:days],
-          start_date: Date.today
+          start_date: params[:start_date],
+          custom_prompt: params[:custom_prompt]
         )
         render_api_success(nil, status: :created)
       rescue Ai::MenuPlanner::ParseError => e

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_24_150000) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_27_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -60,6 +60,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_24_150000) do
   create_table "menu_plans", force: :cascade do |t|
     t.jsonb "ai_parse_payload", comment: "AI 生成结果"
     t.datetime "created_at", null: false
+    t.text "custom_prompt", comment: "用户自定义生成要求"
     t.integer "days", null: false, comment: "规划天数"
     t.date "start_date", null: false, comment: "起始日期"
     t.datetime "updated_at", null: false

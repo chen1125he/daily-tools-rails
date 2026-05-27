@@ -17,7 +17,7 @@ namespace :recipes do
             name: ingredient.name,
             search_keywords: ingredient.search_keywords,
             role: recipe_ingredient.role,
-            amount: recipe_ingredient.amount,
+            amount: recipe_ingredient.amount
           }
         end
       }
