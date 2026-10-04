@@ -67,9 +67,11 @@ class TypingPractice < ApplicationRecord
 
     self.finished_at = Time.current
     self.correct_count = matched
-    self.error_count = (overlap - matched) + (target.size - typed.size).abs
+    pp typing_error_marks.sum(:mistake_count)
+    self.error_count = typing_error_marks.sum(:mistake_count)
+    pp self.error_count
     self.duration_ms = [ ((finished_at - started_at) * 1000).round, 0 ].max
-    self.accuracy = target.empty? ? 0 : ((correct_count.to_d * 100) / target.size).round(2)
+    self.accuracy = target.empty? ? 0 : 100 - ((error_count.to_d * 100) / target.size).round(2)
     minutes = duration_ms.to_f / 60_000
     self.cpm = minutes.positive? ? (correct_count / minutes).round(2) : 0
 

@@ -11,9 +11,11 @@ RSpec.describe 'Typing Words API', type: :request do
       parameter name: :Authorization, in: :header, schema: { type: :string }
       parameter name: :character, in: :query, schema: { type: :string }, required: true
 
+      let(:ai_result) { { wubi_code: 'dwu', wubi_roots: %w[三 人 日] } }
+
       response '200', 'from existing typing word' do
         let!(:user) { create(:user) }
-        let!(:word) { create(:typing_word, character: '春', wubi_code: 'dwu') }
+        let!(:word) { create(:typing_word, character: '春', wubi_code: 'dwu', wubi_roots: %w[三 人 日]) }
         let(:Authorization) { "Bearer #{Auth::TokenIssuer.issue_pair(user: user)[:access_token]}" }
         let(:character) { '春' }
 
@@ -24,6 +26,7 @@ RSpec.describe 'Typing Words API', type: :request do
           expect(data['id']).to eq(word.id)
           expect(data['character']).to eq('春')
           expect(data['wubi_code']).to eq('dwu')
+          expect(data['wubi_roots']).to eq(%w[三 人 日])
           expect(Ai::WubiCodeLookup).not_to have_received(:call)
         end
       end
@@ -34,13 +37,14 @@ RSpec.describe 'Typing Words API', type: :request do
         let(:Authorization) { "Bearer #{Auth::TokenIssuer.issue_pair(user: user)[:access_token]}" }
         let(:character) { '春' }
 
-        before { allow(Ai::WubiCodeLookup).to receive(:call).with(character: '春').and_return('dwu') }
+        before { allow(Ai::WubiCodeLookup).to receive(:call).with(character: '春').and_return(ai_result) }
 
         run_test! do |response|
           data = json['data']
           expect(data['id']).to eq(word.id)
           expect(data['wubi_code']).to eq('dwu')
-          expect(word.reload.wubi_code).to eq('dwu')
+          expect(data['wubi_roots']).to eq(%w[三 人 日])
+          expect(word.reload.wubi_roots).to eq(%w[三 人 日])
         end
       end
 
@@ -49,13 +53,14 @@ RSpec.describe 'Typing Words API', type: :request do
         let(:Authorization) { "Bearer #{Auth::TokenIssuer.issue_pair(user: user)[:access_token]}" }
         let(:character) { '春' }
 
-        before { allow(Ai::WubiCodeLookup).to receive(:call).with(character: '春').and_return('dwu') }
+        before { allow(Ai::WubiCodeLookup).to receive(:call).with(character: '春').and_return(ai_result) }
 
         run_test! do |response|
           data = json['data']
           expect(data['character']).to eq('春')
           expect(data['wubi_code']).to eq('dwu')
-          expect(TypingWord.find_by!(character: '春').wubi_code).to eq('dwu')
+          expect(data['wubi_roots']).to eq(%w[三 人 日])
+          expect(TypingWord.find_by!(character: '春').wubi_roots).to eq(%w[三 人 日])
         end
       end
 

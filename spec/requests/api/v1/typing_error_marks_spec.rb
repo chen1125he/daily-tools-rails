@@ -21,7 +21,8 @@ RSpec.describe 'Typing Error Marks API', type: :request do
             required: %w[character],
             properties: {
               character: { type: :string },
-              wubi_code: { type: :string }
+              wubi_code: { type: :string },
+              wubi_roots: { type: :array, items: { type: :string } }
             }
           }
         }
@@ -32,13 +33,14 @@ RSpec.describe 'Typing Error Marks API', type: :request do
         let!(:practice) { create(:typing_practice, user: user, started_at: Time.current) }
         let(:Authorization) { "Bearer #{Auth::TokenIssuer.issue_pair(user: user)[:access_token]}" }
         let(:typing_practice_id) { practice.id }
-        let(:payload) { { typing_error_mark: { character: '春', wubi_code: 'dwu' } } }
+        let(:payload) { { typing_error_mark: { character: '春', wubi_code: 'dwu', wubi_roots: %w[三 人 日] } } }
 
         run_test! do |response|
           data = json['data']
           expect(data['mistake_count']).to eq(1)
           expect(data['typing_word']['character']).to eq('春')
           expect(data['typing_word']['wubi_code']).to eq('dwu')
+          expect(data['typing_word']['wubi_roots']).to eq(%w[三 人 日])
         end
       end
 

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_04_121500) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_04_130000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -181,6 +181,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_04_121500) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "wubi_code", comment: "五笔编码"
+    t.jsonb "wubi_roots", comment: "五笔字根"
     t.index ["character"], name: "index_typing_words_on_character", unique: true
   end
 

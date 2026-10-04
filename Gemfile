@@ -21,9 +21,9 @@ gem 'tzinfo-data', platforms: %i[ windows jruby ]
 
 # Use Redis-backed adapters for Rails.cache, Active Job, and Action Cable
 gem 'redis'
-gem 'sidekiq', '~> 6.5'
+gem 'sidekiq', '~> 7.3'
 # Rails 8.0.4 redis_cache_store currently expects connection_pool 2.x API.
-gem 'connection_pool', '< 4.0'
+gem 'connection_pool', '~> 2.4'
 
 # Reduces boot times through caching; required in config/boot.rb
 gem 'bootsnap', require: false

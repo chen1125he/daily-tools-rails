@@ -7,9 +7,10 @@ class TypingWordWubiLookupJob < ApplicationJob
 
   def perform(typing_word_id)
     word = TypingWord.find(typing_word_id)
-    return if word.wubi_code.present?
+    return if word.wubi_complete?
 
-    code = Ai::WubiCodeLookup.call(character: word.character)
-    word.update!(wubi_code: code) if word.wubi_code.blank?
+    result = Ai::WubiCodeLookup.call(character: word.character)
+    word.assign_wubi!(wubi_code: result[:wubi_code], wubi_roots: result[:wubi_roots])
+    word.save! if word.changed?
   end
 end

@@ -7,8 +7,12 @@ class TypingErrorMark < ApplicationRecord
   validates :typing_word_id, uniqueness: { scope: :typing_practice_id }
   validates :mistake_count, numericality: { only_integer: true, greater_than: 0 }
 
-  def self.record!(typing_practice:, character:, wubi_code: nil)
-    word = TypingWord.find_or_create_for!(character: character, wubi_code: wubi_code)
+  def self.record!(typing_practice:, character:, wubi_code: nil, wubi_roots: nil)
+    word = TypingWord.find_or_create_for!(
+      character: character,
+      wubi_code: wubi_code,
+      wubi_roots: wubi_roots
+    )
 
     retries = 0
     begin
