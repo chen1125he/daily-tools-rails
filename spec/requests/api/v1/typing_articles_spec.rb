@@ -56,6 +56,16 @@ RSpec.describe 'Typing Articles API', type: :request do
           expect(data['body']).to eq('床前明月光')
         end
       end
+
+      response '201', 'collapses consecutive newlines' do
+        let!(:user) { create(:user) }
+        let(:Authorization) { "Bearer #{Auth::TokenIssuer.issue_pair(user: user)[:access_token]}" }
+        let(:payload) { { typing_article: { title: '春晓', body: "春眠不觉晓\n\n\r\n处处闻啼鸟" } } }
+
+        run_test! do |response|
+          expect(json['data']['body']).to eq("春眠不觉晓\n处处闻啼鸟")
+        end
+      end
     end
   end
 
