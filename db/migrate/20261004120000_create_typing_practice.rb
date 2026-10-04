@@ -21,7 +21,7 @@ class CreateTypingPractice < ActiveRecord::Migration[8.1]
     create_table :typing_practices do |t|
       t.references :user, null: false, foreign_key: true
       t.references :typing_article, null: false, foreign_key: true
-      t.datetime :started_at, null: false, comment: '开始练习时间'
+      t.datetime :started_at, comment: '开始练习时间'
       t.datetime :finished_at, comment: '结束练习时间'
       t.integer :duration_ms, comment: '实际用时（毫秒）'
       t.integer :correct_count, null: false, default: 0, comment: '正确字数'

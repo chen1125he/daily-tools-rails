@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_27_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_04_121500) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -140,6 +140,50 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_120000) do
     t.index ["var"], name: "index_settings_on_var", unique: true
   end
 
+  create_table "typing_articles", force: :cascade do |t|
+    t.text "body", null: false, comment: "练习正文"
+    t.datetime "created_at", null: false
+    t.string "title", null: false, comment: "文章标题"
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "typing_error_marks", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "mistake_count", default: 1, null: false, comment: "该字出错次数"
+    t.bigint "typing_practice_id", null: false
+    t.bigint "typing_word_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["typing_practice_id", "typing_word_id"], name: "index_typing_error_marks_on_practice_and_word", unique: true
+    t.index ["typing_practice_id"], name: "index_typing_error_marks_on_typing_practice_id"
+    t.index ["typing_word_id"], name: "index_typing_error_marks_on_typing_word_id"
+  end
+
+  create_table "typing_practices", force: :cascade do |t|
+    t.decimal "accuracy", precision: 5, scale: 2, comment: "正确率（百分比）"
+    t.integer "correct_count", default: 0, null: false, comment: "正确字数"
+    t.decimal "cpm", precision: 8, scale: 2, comment: "每分钟字数"
+    t.datetime "created_at", null: false
+    t.integer "duration_ms", comment: "实际用时（毫秒）"
+    t.integer "error_count", default: 0, null: false, comment: "错误字数"
+    t.datetime "finished_at", comment: "结束练习时间"
+    t.datetime "started_at", comment: "开始练习时间"
+    t.text "typed_body", comment: "实际打出的内容"
+    t.bigint "typing_article_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["typing_article_id"], name: "index_typing_practices_on_typing_article_id"
+    t.index ["user_id", "created_at"], name: "index_typing_practices_on_user_id_and_created_at"
+    t.index ["user_id"], name: "index_typing_practices_on_user_id"
+  end
+
+  create_table "typing_words", force: :cascade do |t|
+    t.string "character", null: false, comment: "单个汉字"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "wubi_code", comment: "五笔编码"
+    t.index ["character"], name: "index_typing_words_on_character", unique: true
+  end
+
   create_table "users", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.datetime "last_sign_in_at"
@@ -164,4 +208,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_120000) do
   add_foreign_key "recipe_ingredients", "recipes"
   add_foreign_key "recipes", "users"
   add_foreign_key "refresh_tokens", "users"
+  add_foreign_key "typing_error_marks", "typing_practices"
+  add_foreign_key "typing_error_marks", "typing_words"
+  add_foreign_key "typing_practices", "typing_articles"
+  add_foreign_key "typing_practices", "users"
 end

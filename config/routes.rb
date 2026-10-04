@@ -31,6 +31,12 @@ Rails.application.routes.draw do
         resources :menus, only: %i[index show create update destroy] do
           post 'generate', on: :collection
         end
+        resources :typing_articles
+        resources :typing_practices, only: %i[index show create] do
+          post :start, on: :member
+          post :complete, on: :member
+          resources :error_marks, only: %i[create], controller: 'typing_error_marks'
+        end
       end
     end
   end
