@@ -32,6 +32,9 @@ Rails.application.routes.draw do
           post 'generate', on: :collection
         end
         resources :typing_articles
+        resources :typing_words, only: [] do
+          get :lookup, on: :collection
+        end
         resources :typing_practices, only: %i[index show create] do
           post :start, on: :member
           post :complete, on: :member

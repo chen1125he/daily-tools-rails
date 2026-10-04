@@ -17,6 +17,15 @@ class TypingWord < ApplicationRecord
     find_by!(character: character.to_s.strip)
   end
 
+  def self.lookup_wubi!(character:)
+    char = character.to_s.strip
+    word = find_by(character: char)
+    return word if word&.wubi_code.present?
+
+    code = Ai::WubiCodeLookup.call(character: char)
+    find_or_create_for!(character: char, wubi_code: code)
+  end
+
   private
 
   def enqueue_wubi_lookup
