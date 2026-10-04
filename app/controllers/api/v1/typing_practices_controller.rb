@@ -3,7 +3,7 @@
 module Api
   module V1
     class TypingPracticesController < ApplicationController
-      before_action :set_typing_practice, only: %i[show start complete]
+      before_action :set_typing_practice, only: %i[show start update complete]
 
       def index
         scope = current_user.typing_practices.includes(:typing_article, typing_error_marks: :typing_word)
@@ -29,6 +29,17 @@ module Api
         render :show
       rescue ActiveRecord::RecordInvalid => e
         render_validation_error(e.record)
+      end
+
+      def update
+        typed_body = params.require(:typing_practice).fetch(:typed_body)
+        @typing_practice.save_typed_body!(typed_body)
+        @typing_practice = reload_practice(@typing_practice.id)
+        render :show
+      rescue ActiveRecord::RecordInvalid => e
+        render_validation_error(e.record)
+      rescue ActionController::ParameterMissing, KeyError => e
+        render json: { error: { code: 'INVALID_PARAMS', message: e.message } }, status: :bad_request
       end
 
       def complete

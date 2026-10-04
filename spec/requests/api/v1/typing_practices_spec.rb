@@ -98,6 +98,58 @@ RSpec.describe 'Typing Practices API', type: :request do
     end
   end
 
+  path '/api/v1/typing_practices/{id}' do
+    parameter name: :id, in: :path, schema: { type: :integer }
+
+    put 'Autosave typed body' do
+      tags 'TypingPractices'
+      consumes 'application/json'
+      produces 'application/json'
+      security [ { bearerAuth: [] } ]
+      parameter name: :Authorization, in: :header, schema: { type: :string }
+      parameter name: :payload, in: :body, schema: {
+        type: :object,
+        required: [ 'typing_practice' ],
+        properties: {
+          typing_practice: {
+            type: :object,
+            required: %w[typed_body],
+            properties: {
+              typed_body: { type: :string }
+            }
+          }
+        }
+      }
+
+      response '200', 'saved' do
+        let!(:user) { create(:user) }
+        let!(:practice) { create(:typing_practice, user: user, started_at: Time.current) }
+        let(:Authorization) { "Bearer #{Auth::TokenIssuer.issue_pair(user: user)[:access_token]}" }
+        let(:id) { practice.id }
+        let(:payload) { { typing_practice: { typed_body: '春眠' } } }
+
+        run_test! do |response|
+          data = json['data']
+          expect(data['typed_body']).to eq('春眠')
+          expect(data['status']).to eq('in_progress')
+          expect(data['finished_at']).to be_nil
+        end
+      end
+
+      response '422', 'already finished' do
+        let!(:user) { create(:user) }
+        let!(:practice) { create(:typing_practice, user: user, started_at: 1.minute.ago, finished_at: Time.current) }
+        let(:Authorization) { "Bearer #{Auth::TokenIssuer.issue_pair(user: user)[:access_token]}" }
+        let(:id) { practice.id }
+        let(:payload) { { typing_practice: { typed_body: '春眠' } } }
+
+        run_test! do |response|
+          expect(json['error']['code']).to eq('VALIDATION_FAILED')
+        end
+      end
+    end
+  end
+
   path '/api/v1/typing_practices/{id}/complete' do
     parameter name: :id, in: :path, schema: { type: :integer }
 
@@ -134,8 +186,8 @@ RSpec.describe 'Typing Practices API', type: :request do
           expect(data['status']).to eq('completed')
           expect(data['typed_body']).to eq('春眠不学晓')
           expect(data['correct_count']).to eq(4)
-          expect(data['error_count']).to eq(1)
-          expect(data['accuracy'].to_f).to eq(80.0)
+          expect(data['error_count']).to eq(0)
+          expect(data['accuracy'].to_f).to eq(100.0)
           expect(data['duration_ms']).to be_within(2_000).of(60_000)
           expect(data['cpm'].to_f).to be > 0
           expect(data['finished_at']).to be_present

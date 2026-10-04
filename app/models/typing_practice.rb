@@ -44,6 +44,19 @@ class TypingPractice < ApplicationRecord
     update!(started_at: at)
   end
 
+  def save_typed_body!(typed_body)
+    if completed?
+      errors.add(:base, '练习已结束')
+      raise ActiveRecord::RecordInvalid, self
+    end
+    if started_at.blank?
+      errors.add(:base, '练习尚未开始')
+      raise ActiveRecord::RecordInvalid, self
+    end
+
+    update!(typed_body: typed_body)
+  end
+
   def complete!(typed_body:)
     if completed?
       errors.add(:base, '练习已结束')
