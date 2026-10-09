@@ -11,7 +11,8 @@ class TypingWord < ApplicationRecord
 
   def self.find_or_create_for!(character:, wubi_code: nil, wubi_roots: nil)
     word = find_or_initialize_by(character: character.to_s.strip)
-    word.assign_wubi!(wubi_code: wubi_code, wubi_roots: wubi_roots)
+    word.wubi_code = wubi_code if wubi_code.present?
+    word.wubi_roots = wubi_roots if wubi_roots.present?
     word.save!
     word
   rescue ActiveRecord::RecordNotUnique
@@ -43,7 +44,9 @@ class TypingWord < ApplicationRecord
   def enqueue_wubi_lookup
     return if wubi_complete?
 
-    TypingWordWubiLookupJob.perform_later(id)
+    # 10 秒后再尝试获取 Wubi 编码
+    # 因为查询时 会同时触发 error_marks 的创建 + lookup 的同步接口 可能重复调用
+    TypingWordWubiLookupJob.set(wait: 10.seconds).perform_later(id)
   end
 
   private

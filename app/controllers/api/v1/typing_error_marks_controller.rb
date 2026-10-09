@@ -20,9 +20,7 @@ module Api
 
         @typing_error_mark = TypingErrorMark.record!(
           typing_practice: practice,
-          character: character,
-          wubi_code: error_mark_params[:wubi_code],
-          wubi_roots: error_mark_params[:wubi_roots]
+          character: character
         )
         @typing_error_mark = TypingErrorMark.includes(:typing_word).find(@typing_error_mark.id)
         render :show, status: :created
@@ -35,7 +33,7 @@ module Api
       private
 
       def error_mark_params
-        params.require(:typing_error_mark).permit(:character, :wubi_code, wubi_roots: [])
+        params.require(:typing_error_mark).permit(:character)
       end
     end
   end
