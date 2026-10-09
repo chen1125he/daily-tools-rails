@@ -7,17 +7,41 @@ Rails.application.routes.draw do
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
   # Can be used by load balancers and uptime monitors to verify that the app is live.
-  get "up" => "rails/health#show", as: :rails_health_check
+  get 'up' => 'rails/health#show', as: :rails_health_check
 
   # Defines the root path route ("/")
   # root "posts#index"
   namespace :api do
     namespace :v1 do
-      post "auth/sign_in", to: "auth#sign_in"
-      post "auth/refresh", to: "auth#refresh"
-      get "auth/me", to: "auth#me"
-      delete "auth/sign_out", to: "auth#sign_out"
-      patch "auth/password", to: "auth#password"
+      defaults format: 'json' do
+        post 'auth/sign_in', to: 'auth#sign_in'
+        post 'auth/refresh', to: 'auth#refresh'
+        get 'auth/me', to: 'auth#me'
+        delete 'auth/sign_out', to: 'auth#sign_out'
+        patch 'auth/password', to: 'auth#password'
+        resources :users, only: %i[index]
+        resources :chores, only: %i[index show create update]
+        resources :chore_records, only: %i[index show create update destroy] do
+          post 'parse_from_text', on: :collection
+        end
+        resources :ingredients, only: %i[index show create update destroy]
+        resources :recipes, only: %i[index show create update destroy] do
+          post 'parse_from_text', on: :collection
+        end
+        resources :menus, only: %i[index show create update destroy] do
+          post 'generate', on: :collection
+        end
+        resources :typing_articles
+        resources :typing_words, only: [] do
+          get :lookup, on: :collection
+        end
+        resources :typing_practices, only: %i[index show create] do
+          put :update, on: :member
+          post :start, on: :member
+          post :complete, on: :member
+          resources :error_marks, only: %i[create], controller: 'typing_error_marks'
+        end
+      end
     end
   end
 end
