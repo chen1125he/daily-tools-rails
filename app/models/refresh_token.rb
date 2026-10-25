@@ -6,7 +6,7 @@ class RefreshToken < ApplicationRecord
   validates :token_digest, presence: true, uniqueness: true
   validates :expires_at, presence: true
 
-  scope :active, -> { where(revoked_at: nil).where("expires_at > ?", Time.current) }
+  scope :active, -> { where(revoked_at: nil).where('expires_at > ?', Time.current) }
 
   def self.digest(raw_token)
     Digest::SHA256.hexdigest(raw_token.to_s)

@@ -82,5 +82,6 @@ production:
   primary: &primary_production
     <<: *default
     database: daily_tools_rails_production
+    host: <%= ENV.fetch("DAILY_TOOLS_RAILS_DB_HOST", "127.0.0.1") %>
     username: daily_tools_rails
     password: <%= ENV["DAILY_TOOLS_RAILS_DATABASE_PASSWORD"] %>
