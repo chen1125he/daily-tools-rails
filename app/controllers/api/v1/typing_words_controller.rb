@@ -17,12 +17,14 @@ module Api
           }, status: :bad_request
         end
 
-        @typing_word = TypingWord.lookup_wubi!(character: character)
+        @typing_word = TypingWord.find_by(character: character)
+        unless @typing_word
+          return render json: {
+            error: { code: 'TYPING_WORD_NOT_FOUND', message: '未找到该汉字的五笔编码' }
+          }, status: :not_found
+        end
+
         render :show
-      rescue Ai::WubiCodeLookup::ParseError => e
-        render json: { error: { code: 'WUBI_LOOKUP_FAILED', message: e.message } }, status: :unprocessable_content
-      rescue ActiveRecord::RecordInvalid => e
-        render_validation_error(e.record)
       end
     end
   end
