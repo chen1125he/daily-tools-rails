@@ -25,6 +25,8 @@ module Api
         )
         @typing_error_mark = TypingErrorMark.includes(:typing_word).find(@typing_error_mark.id)
         render :show, status: :created
+      rescue ActiveRecord::RecordNotFound
+        render_not_found('TYPING_WORD_NOT_FOUND', '未找到该汉字')
       rescue ActiveRecord::RecordInvalid => e
         render_validation_error(e.record)
       end

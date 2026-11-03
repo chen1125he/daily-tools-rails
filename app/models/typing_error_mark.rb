@@ -9,7 +9,7 @@ class TypingErrorMark < ApplicationRecord
   validates :recent_mistake_count, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
 
   def self.record!(user:, character:)
-    word = TypingWord.find_or_create_for!(character: character)
+    word = TypingWord.find_by!(character: character.to_s.strip)
 
     retries = 0
     begin

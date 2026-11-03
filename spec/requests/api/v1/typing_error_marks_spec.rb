@@ -68,6 +68,7 @@ RSpec.describe 'Typing Error Marks API', type: :request do
 
       response '201', 'created' do
         let!(:user) { create(:user) }
+        let!(:word) { create(:typing_word, character: '春', wubi_code: 'dwu') }
         let(:Authorization) { "Bearer #{Auth::TokenIssuer.issue_pair(user: user)[:access_token]}" }
         let(:payload) { { typing_error_mark: { character: '春' } } }
 
