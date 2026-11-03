@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_25_132700) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_03_210009) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -149,13 +149,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_25_132700) do
 
   create_table "typing_error_marks", force: :cascade do |t|
     t.datetime "created_at", null: false
-    t.integer "mistake_count", default: 1, null: false, comment: "该字出错次数"
-    t.bigint "typing_practice_id", null: false
+    t.integer "mistake_count", default: 1, null: false, comment: "错误总次数"
+    t.integer "recent_mistake_count", default: 1, null: false, comment: "近期错误次数"
     t.bigint "typing_word_id", null: false
     t.datetime "updated_at", null: false
-    t.index ["typing_practice_id", "typing_word_id"], name: "index_typing_error_marks_on_practice_and_word", unique: true
-    t.index ["typing_practice_id"], name: "index_typing_error_marks_on_typing_practice_id"
+    t.bigint "user_id"
     t.index ["typing_word_id"], name: "index_typing_error_marks_on_typing_word_id"
+    t.index ["user_id", "typing_word_id"], name: "index_typing_error_marks_on_user_and_word", unique: true
+    t.index ["user_id"], name: "index_typing_error_marks_on_user_id"
   end
 
   create_table "typing_practices", force: :cascade do |t|
@@ -208,8 +209,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_25_132700) do
   add_foreign_key "recipe_ingredients", "recipes"
   add_foreign_key "recipes", "users"
   add_foreign_key "refresh_tokens", "users"
-  add_foreign_key "typing_error_marks", "typing_practices"
   add_foreign_key "typing_error_marks", "typing_words"
+  add_foreign_key "typing_error_marks", "users"
   add_foreign_key "typing_practices", "typing_articles"
   add_foreign_key "typing_practices", "users"
 end

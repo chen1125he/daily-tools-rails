@@ -9,7 +9,3 @@ node(:status) { |practice| practice.status }
 child(typing_article: :typing_article) do
   extends 'api/v1/typing_articles/base'
 end
-
-child(typing_error_marks: :typing_error_marks) do
-  extends 'api/v1/typing_error_marks/base'
-end

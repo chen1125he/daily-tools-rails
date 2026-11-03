@@ -10,6 +10,7 @@ class User < ApplicationRecord
   has_many :menus, dependent: :destroy
   has_many :menu_plans, dependent: :destroy
   has_many :typing_practices, dependent: :destroy
+  has_many :typing_error_marks, dependent: :destroy
 
   validates :phone, presence: true, uniqueness: true
   validates :password, length: { minimum: 8 }, if: -> { password.present? }

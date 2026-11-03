@@ -35,11 +35,11 @@ Rails.application.routes.draw do
         resources :typing_words, only: [] do
           get :lookup, on: :collection
         end
+        resources :typing_error_marks, only: %i[create]
         resources :typing_practices, only: %i[index show create] do
           put :update, on: :member
           post :start, on: :member
           post :complete, on: :member
-          resources :error_marks, only: %i[create], controller: 'typing_error_marks'
         end
       end
     end

@@ -1,23 +1,31 @@
 # frozen_string_literal: true
 
 class TypingErrorMark < ApplicationRecord
-  belongs_to :typing_practice, inverse_of: :typing_error_marks
+  belongs_to :user
   belongs_to :typing_word
 
-  validates :typing_word_id, uniqueness: { scope: :typing_practice_id }
-  validates :mistake_count, numericality: { only_integer: true, greater_than: 0 }
+  validates :typing_word_id, uniqueness: { scope: :user_id }
+  validates :mistake_count, :recent_mistake_count,
+            numericality: { only_integer: true, greater_than: 0 }
 
-  def self.record!(typing_practice:, character:)
+  def self.record!(user:, character:)
     word = TypingWord.find_or_create_for!(character: character)
 
     retries = 0
     begin
       transaction do
-        mark = typing_practice.typing_error_marks.lock.find_by(typing_word_id: word.id)
+        mark = user.typing_error_marks.lock.find_by(typing_word_id: word.id)
         if mark
-          mark.increment!(:mistake_count)
+          mark.update!(
+            mistake_count: mark.mistake_count + 1,
+            recent_mistake_count: mark.recent_mistake_count + 1
+          )
         else
-          mark = typing_practice.typing_error_marks.create!(typing_word: word)
+          mark = user.typing_error_marks.create!(
+            typing_word: word,
+            mistake_count: 1,
+            recent_mistake_count: 1
+          )
         end
         mark
       end

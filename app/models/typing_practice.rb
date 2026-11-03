@@ -4,9 +4,6 @@ class TypingPractice < ApplicationRecord
   belongs_to :user
   belongs_to :typing_article
 
-  has_many :typing_error_marks, dependent: :destroy, inverse_of: :typing_practice
-  has_many :typing_words, through: :typing_error_marks
-
   validates :correct_count, :error_count, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validates :duration_ms, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, allow_nil: true
   validates :accuracy, numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 100 }, allow_nil: true
@@ -80,7 +77,6 @@ class TypingPractice < ApplicationRecord
 
     self.finished_at = Time.current
     self.correct_count = matched
-    self.error_count = typing_error_marks.sum(:mistake_count)
     self.duration_ms = [ ((finished_at - started_at) * 1000).round, 0 ].max
     self.accuracy = target.empty? ? 0 : 100 - ((error_count.to_d * 100) / target.size).round(2)
     minutes = duration_ms.to_f / 60_000

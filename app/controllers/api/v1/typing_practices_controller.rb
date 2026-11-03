@@ -6,7 +6,7 @@ module Api
       before_action :set_typing_practice, only: %i[show start update complete]
 
       def index
-        scope = current_user.typing_practices.includes(:typing_article, typing_error_marks: :typing_word)
+        scope = current_user.typing_practices.includes(:typing_article)
         scope = scope.where(typing_article_id: params[:typing_article_id]) if params[:typing_article_id].present?
         @pagy, @typing_practices = pagy(scope.order(created_at: :desc, id: :desc))
       end
@@ -62,7 +62,7 @@ module Api
       end
 
       def reload_practice(id)
-        current_user.typing_practices.includes(:typing_article, typing_error_marks: :typing_word).find(id)
+        current_user.typing_practices.includes(:typing_article).find(id)
       end
 
       def create_params
