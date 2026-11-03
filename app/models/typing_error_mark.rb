@@ -5,8 +5,8 @@ class TypingErrorMark < ApplicationRecord
   belongs_to :typing_word
 
   validates :typing_word_id, uniqueness: { scope: :user_id }
-  validates :mistake_count, :recent_mistake_count,
-            numericality: { only_integer: true, greater_than: 0 }
+  validates :mistake_count, numericality: { only_integer: true, greater_than: 0 }
+  validates :recent_mistake_count, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
 
   def self.record!(user:, character:)
     word = TypingWord.find_or_create_for!(character: character)
